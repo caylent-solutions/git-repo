@@ -69,6 +69,7 @@ def main(argv: List[str]) -> int:
     # behavior (like probing active number of CPUs).  We use a weird name &
     # value to make it less likely for users to set this var themselves.
     os.environ["_REPO_GENERATE_MANPAGES_"] = " indeed! "
+    os.environ["REPO_TRACE"] = "0"
 
     # "repo branch" is an alias for "repo branches".
     del subcmds.all_commands["branch"]
@@ -130,9 +131,12 @@ def main(argv: List[str]) -> int:
         tempbin.chmod(0o755)
 
         # Run all cmd in parallel, and wait for them to finish.
+        env = os.environ.copy()
+        env["REPO_TRACE"] = "0"
         with multiprocessing.Pool() as pool:
             pool.map(
-                functools.partial(worker, cwd=tempdir, check=True), cmdlist
+                functools.partial(worker, cwd=tempdir, check=True, env=env),
+                cmdlist,
             )
 
     ret = 0
