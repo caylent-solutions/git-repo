@@ -2,42 +2,70 @@
 
 This is Cayalent's fork of Google's repo tool with additional features.
 
+## Table of Contents
+
+- [Installation](#installation)
+  - [Quick Start](#quick-start-recommended)
+  - [Production (Pinned Version)](#production-pinned-version)
+  - [Override Repository URL or Version](#override-repository-url-or-version)
+- [New Features](#new-features)
+  - [Environment Variable Substitution (envsubst)](#environment-variable-substitution-envsubst)
+- [Development](#development)
+  - [Setup](#setup)
+  - [Running Tests](#running-tests)
+  - [Creating a Release](#creating-a-release)
+- [Upstream Sync](#upstream-sync)
+
 ## Installation
 
-### From a Specific Tag (Recommended for Production)
+### Quick Start (Recommended)
 
 ```bash
-# Install repo from GitHub - <ref> can be a tag, branch, or commit
+# Install repo from GitHub
+pip install git+https://github.com/caylent-solutions/git-repo
+
+# Initialize repo - automatically uses latest caylent-* tag
+repo init -u <YOUR_MANIFEST_URL>
+```
+
+By default, `repo init` will automatically fetch and use the latest `caylent-*` tag from GitHub.
+
+### Production (Pinned Version)
+
+For production environments, pin to a specific tag to ensure consistency:
+
+```bash
+# Install specific tag
+pip install git+https://github.com/caylent-solutions/git-repo@caylent-1.0.0
+
+# Initialize with the same pinned tag
+repo init -u <YOUR_MANIFEST_URL> --repo-rev=caylent-1.0.0
+```
+
+Replace `caylent-1.0.0` with your desired version.
+
+### Override Repository URL or Version
+
+To use a specific version or branch instead of the latest tag:
+
+```bash
+# Install specific version
 pip install git+https://github.com/caylent-solutions/git-repo@<ref>
 
-# If using asdf, reshim
-asdf reshim python
+# Initialize with specific version
+repo init -u <YOUR_MANIFEST_URL> --repo-rev=<ref>
+```
 
-# Initialize with Cayalent's fork - REQUIRED: specify --repo-url and --repo-rev
-# <ref> must match the version installed above
+To use a different fork entirely:
+
+```bash
+# Initialize with custom repo URL and version
 repo init -u <YOUR_MANIFEST_URL> \
-  --repo-url=https://github.com/caylent-solutions/git-repo \
+  --repo-url=<CUSTOM_REPO_URL> \
   --repo-rev=<ref>
 ```
 
 Replace `<ref>` with a tag (e.g., `caylent-1.0.0`), branch (e.g., `main`), or commit hash.
-
-**IMPORTANT**: You MUST specify `--repo-url` and `--repo-rev` when running `repo init`, otherwise it will download the official Google repo instead of this fork. Both `pip install` and `--repo-rev` accept the same reference types: tags, branches, or commit hashes.
-
-### Example: Installing from a Branch
-
-```bash
-# Example: Install from feature branch
-pip install git+https://github.com/caylent-solutions/git-repo@<ref>
-
-# If using asdf, reshim
-asdf reshim python
-
-# Initialize with the same reference
-repo init -u <YOUR_MANIFEST_URL> \
-  --repo-url=https://github.com/caylent-solutions/git-repo \
-  --repo-rev=<ref>
-```
 
 ## New Features
 
@@ -94,9 +122,6 @@ cd git-repo
 
 # Install development dependencies
 pip install -r requirements-dev.txt
-
-# Install system dependencies (Ubuntu/Debian)
-sudo apt-get install help2man
 ```
 
 ### Running Tests
