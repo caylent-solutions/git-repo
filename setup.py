@@ -59,4 +59,5 @@ setuptools.setup(
     ],
     python_requires=">=3.6",
     packages=["subcmds"],
+    scripts=["repo"],
 )

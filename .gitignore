@@ -3,6 +3,7 @@
 *.log
 *.pyc
 __pycache__
+build
 /dist
 .repopickle_*
 /repoc
@@ -11,3 +12,9 @@ __pycache__
 
 # PyCharm related
 /.idea/
+
+# Environment files
+shell.env
+devcontainer-environment-variables.json
+.devcontainer/aws-profile-map.json
+.coverage

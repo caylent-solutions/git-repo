@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -e
+
+echo "Running pre-push checks..."
+
+make pre-commit
+
+echo "✓ All pre-push checks passed!"

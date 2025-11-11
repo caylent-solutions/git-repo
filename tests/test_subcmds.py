@@ -28,7 +28,15 @@ class AllCommands(unittest.TestCase):
         # NB: We don't test all subcommands as we want to avoid "change
         # detection" tests, so we just look for the most common/important ones
         # here that are unlikely to ever change.
-        for cmd in {"cherry-pick", "help", "init", "start", "sync", "upload"}:
+        for cmd in {
+            "cherry-pick",
+            "help",
+            "init",
+            "start",
+            "sync",
+            "upload",
+            "envsubst",
+        }:
             self.assertIn(cmd, subcmds.all_commands)
 
     def test_naming(self):
