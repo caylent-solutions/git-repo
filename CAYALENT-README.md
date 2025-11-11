@@ -7,33 +7,36 @@ This is Cayalent's fork of Google's repo tool with additional features.
 ### From a Specific Tag (Recommended for Production)
 
 ```bash
-# Install repo launcher
-mkdir -p ~/.bin
-curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
-chmod a+rx ~/.bin/repo
-export PATH="${HOME}/.bin:${PATH}"
+# Install repo from GitHub - <ref> can be a tag, branch, or commit
+pip install git+https://github.com/caylent-solutions/git-repo@<ref>
 
-# Initialize with Cayalent's fork using a specific tag
+# If using asdf, reshim
+asdf reshim python
+
+# Initialize with Cayalent's fork - REQUIRED: specify --repo-url and --repo-rev
+# <ref> must match the version installed above
 repo init -u <YOUR_MANIFEST_URL> \
-  --repo-url=https://github.com/cayalent/git-repo \
-  --repo-branch=v1.0.0
+  --repo-url=https://github.com/caylent-solutions/git-repo \
+  --repo-rev=<ref>
 ```
 
-Replace `v1.0.0` with the desired semver tag.
+Replace `<ref>` with a tag (e.g., `caylent-1.0.0`), branch (e.g., `main`), or commit hash.
 
-### From a Branch (For Testing)
+**IMPORTANT**: You MUST specify `--repo-url` and `--repo-rev` when running `repo init`, otherwise it will download the official Google repo instead of this fork. Both `pip install` and `--repo-rev` accept the same reference types: tags, branches, or commit hashes.
+
+### Example: Installing from a Branch
 
 ```bash
-# Install repo launcher (if not already installed)
-mkdir -p ~/.bin
-curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
-chmod a+rx ~/.bin/repo
-export PATH="${HOME}/.bin:${PATH}"
+# Example: Install from feature branch
+pip install git+https://github.com/caylent-solutions/git-repo@<ref>
 
-# Initialize with Cayalent's fork using a branch
+# If using asdf, reshim
+asdf reshim python
+
+# Initialize with the same reference
 repo init -u <YOUR_MANIFEST_URL> \
-  --repo-url=https://github.com/cayalent/git-repo \
-  --repo-branch=feature/support-cpm
+  --repo-url=https://github.com/caylent-solutions/git-repo \
+  --repo-rev=<ref>
 ```
 
 ## New Features
@@ -110,8 +113,8 @@ tox
 
 1. Update version and create a semver tag:
    ```bash
-   git tag -a v1.0.0 -m "Release v1.0.0"
-   git push origin v1.0.0
+   git tag -a caylent-1.0.0 -m "Release caylent-1.0.0"
+   git push origin caylent-1.0.0
    ```
 
 2. Users can then install using the tag as shown in the installation section above.

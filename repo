@@ -122,12 +122,12 @@ if __name__ == "__main__":
 #
 REPO_URL = os.environ.get("REPO_URL", None)
 if not REPO_URL:
-    REPO_URL = "https://gerrit.googlesource.com/git-repo"
+    REPO_URL = "https://github.com/caylent-solutions/git-repo"
 REPO_REV = os.environ.get("REPO_REV")
 if not REPO_REV:
     REPO_REV = "stable"
 # URL to file bug reports for repo tool issues.
-BUG_URL = "https://issues.gerritcodereview.com/issues/new?component=1370071"
+BUG_URL = "https://github.com/caylent-solutions/git-repo/issues"
 
 # increment this whenever we make important changes to this script
 VERSION = (2, 54)
