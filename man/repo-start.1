@@ -2,28 +2,53 @@
 .TH REPO "1" "November 2025" "repo start" "Repo Manual"
 .SH NAME
 repo \- repo start - manual page for repo start
+.SH SYNOPSIS
+.B repo
+\fI\,start <newbranchname> \/\fR[\fI\,--all | <project>\/\fR...]
 .SH DESCRIPTION
-.SS "Traceback (most recent call last):"
-.IP
-File "/tmp/XXXXXX/.repo/repo/main.py", line 869, in <module>
-.IP
-_Main(sys.argv[1:])
-.IP
-File "/tmp/XXXXXX/.repo/repo/main.py", line 845, in _Main
-.IP
-result = repo._Run(name, gopts, argv) or 0
-.IP
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.IP
-File "/tmp/XXXXXX/.repo/repo/main.py", line 276, in _Run
-.IP
-with Trace(
-.IP
-^^^^^^
-.IP
-File "/workspaces/git\-repo/repo_trace.py", line 107, in __enter__
-.SS with open(_TRACE_FILE, "a") as f:
-.IP
-^^^^^^^^^^^^^^^^^^^^^^
+Summary
 .PP
-PermissionError: [Errno 13] Permission denied: '/workspaces/TRACE_FILE'
+Start a new branch for development
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.TP
+\fB\-j\fR JOBS, \fB\-\-jobs\fR=\fI\,JOBS\/\fR
+number of jobs to run in parallel (default: based on
+number of CPU cores)
+.TP
+\fB\-\-all\fR
+begin branch in all projects
+.TP
+\fB\-r\fR REVISION, \fB\-\-rev\fR=\fI\,REVISION\/\fR, \fB\-\-revision\fR=\fI\,REVISION\/\fR
+point branch at this revision instead of upstream
+.TP
+\fB\-\-head\fR, \fB\-\-HEAD\fR
+abbreviation for \fB\-\-rev\fR HEAD
+.SS Logging options:
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+show all output
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+only show errors
+.SS Multi\-manifest options:
+.TP
+\fB\-\-outer\-manifest\fR
+operate starting at the outermost manifest
+.TP
+\fB\-\-no\-outer\-manifest\fR
+do not operate on outer manifests
+.TP
+\fB\-\-this\-manifest\-only\fR
+only operate on this (sub)manifest
+.TP
+\fB\-\-no\-this\-manifest\-only\fR, \fB\-\-all\-manifests\fR
+operate on this manifest and its submanifests
+.PP
+Run `repo help start` to view the detailed manual.
+.SH DETAILS
+.PP
+\&'repo start' begins a new branch of development, starting from the revision
+specified in the manifest.

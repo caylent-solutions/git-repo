@@ -2,28 +2,47 @@
 .TH REPO "1" "November 2025" "repo selfupdate" "Repo Manual"
 .SH NAME
 repo \- repo selfupdate - manual page for repo selfupdate
+.SH SYNOPSIS
+.B repo
+\fI\,selfupdate\/\fR
 .SH DESCRIPTION
-.SS "Traceback (most recent call last):"
-.IP
-File "/tmp/XXXXXX/.repo/repo/main.py", line 869, in <module>
-.IP
-_Main(sys.argv[1:])
-.IP
-File "/tmp/XXXXXX/.repo/repo/main.py", line 845, in _Main
-.IP
-result = repo._Run(name, gopts, argv) or 0
-.IP
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.IP
-File "/tmp/XXXXXX/.repo/repo/main.py", line 276, in _Run
-.IP
-with Trace(
-.IP
-^^^^^^
-.IP
-File "/workspaces/git\-repo/repo_trace.py", line 107, in __enter__
-.SS with open(_TRACE_FILE, "a") as f:
-.IP
-^^^^^^^^^^^^^^^^^^^^^^
+Summary
 .PP
-PermissionError: [Errno 13] Permission denied: '/workspaces/TRACE_FILE'
+Update repo to the latest version
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show this help message and exit
+.SS Logging options:
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+show all output
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+only show errors
+.SS Multi\-manifest options:
+.TP
+\fB\-\-outer\-manifest\fR
+operate starting at the outermost manifest
+.TP
+\fB\-\-no\-outer\-manifest\fR
+do not operate on outer manifests
+.TP
+\fB\-\-this\-manifest\-only\fR
+only operate on this (sub)manifest
+.TP
+\fB\-\-no\-this\-manifest\-only\fR, \fB\-\-all\-manifests\fR
+operate on this manifest and its submanifests
+.SS repo Version options:
+.TP
+\fB\-\-no\-repo\-verify\fR
+do not verify repo source code
+.PP
+Run `repo help selfupdate` to view the detailed manual.
+.SH DETAILS
+.PP
+The 'repo selfupdate' command upgrades repo to the latest version, if a newer
+version is available.
+.PP
+Normally this is done automatically by 'repo sync' and does not need to be
+performed by an end\-user.
