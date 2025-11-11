@@ -36,10 +36,13 @@ def run_pytest(argv: List[str]) -> int:
     if is_ci():
         argv = ["-m", "not skip_cq"] + argv
 
+    env = os.environ.copy()
+    env["REPO_REV"] = "stable"
     return subprocess.run(
         [sys.executable, "-m", "pytest"] + argv,
         check=False,
         cwd=ROOT_DIR,
+        env=env,
     ).returncode
 
 
