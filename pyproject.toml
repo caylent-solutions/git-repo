@@ -16,6 +16,14 @@
 line-length = 80
 # NB: Keep in sync with tox.ini.
 target-version = ['py36', 'py37', 'py38', 'py39', 'py310', 'py311'] #, 'py312'
+extend-exclude = '''
+(
+  \.devcontainer/fix-line-endings\.py
+)
+'''
+
+[tool.isort]
+skip = [".devcontainer/fix-line-endings.py"]
 
 [tool.pytest.ini_options]
 markers = """

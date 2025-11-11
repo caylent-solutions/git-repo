@@ -15,3 +15,4 @@ exclude =
     .venv,
     venv,
     .tox,
+    .devcontainer/fix-line-endings.py,

@@ -79,6 +79,7 @@ def main(argv: List[str]) -> int:
         [
             "help2man",
             "-N",
+            "--no-discard-stderr",
             "-n",
             f"repo {cmd} - manual page for repo {cmd}",
             "-S",
@@ -98,6 +99,7 @@ def main(argv: List[str]) -> int:
         [
             "help2man",
             "-N",
+            "--no-discard-stderr",
             "-n",
             "repository management tool built on top of git",
             "-S",
@@ -177,6 +179,7 @@ def replace_regex(data):
         (r"^\033\[[0-9;]*m([^\033]*)\033\[m", r"\g<1>"),
         (r"^\.IP\n(.*:)\n", r".SS \g<1>\n"),
         (r"^\.PP\nDescription", r".SH DETAILS"),
+        (r"/tmp/tmp[a-zA-Z0-9_]+/", r"/tmp/XXXXXX/"),
     )
     for pattern, replacement in regex:
         data = re.sub(pattern, replacement, data, flags=re.M)

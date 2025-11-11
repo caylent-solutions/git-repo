@@ -5,6 +5,7 @@ set -euo pipefail
 # Source shared functions
 source "$(dirname "$0")/devcontainer-functions.sh"
 
-pip install tox
+sudo apt-get install help2man
+pip install -r requirements-dev.txt
 
 log_info "Project-specific setup complete"

@@ -3,6 +3,7 @@
 *.log
 *.pyc
 __pycache__
+build
 /dist
 .repopickle_*
 /repoc

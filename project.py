@@ -20,7 +20,6 @@ import platform
 import random
 import re
 import shutil
-import stat
 import string
 import subprocess
 import sys
@@ -431,12 +430,12 @@ class _CopyFile:
                     if not platform_utils.isdir(dest_dir):
                         os.makedirs(dest_dir)
                 shutil.copy(src, dest)
-                # Make the file read-only.
-                mode = os.stat(dest)[stat.ST_MODE]
-                mode = mode & ~(stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
-                os.chmod(dest, mode)
-            except OSError:
-                logger.error("error: Cannot copy file %s to %s", src, dest)
+                # Don't mess with the file's attributes.
+                # mode = os.stat(dest)[stat.ST_MODE]
+                # mode = mode & ~(stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
+                # os.chmod(dest, mode)
+            except IOError:
+                logger.error("Cannot copy file %s to %s", src, dest)
 
 
 class _LinkFile:
