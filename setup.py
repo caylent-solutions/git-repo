@@ -59,14 +59,5 @@ setuptools.setup(
     ],
     python_requires=">=3.6",
     packages=["subcmds"],
-    data_files=[
-        (
-            "man",
-            [
-                f"man/{f}"
-                for f in os.listdir(os.path.join(TOPDIR, "man"))
-                if f.endswith(".1")
-            ],
-        )
-    ],
+    scripts=["repo"],
 )

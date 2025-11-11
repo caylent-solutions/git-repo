@@ -1,4 +1,4 @@
-graft docs hooks man tests
+graft docs hooks tests
 include *.py
 include LICENSE
 include git_ssh
