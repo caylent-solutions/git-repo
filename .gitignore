@@ -17,3 +17,4 @@ build
 shell.env
 devcontainer-environment-variables.json
 .devcontainer/aws-profile-map.json
+.coverage
