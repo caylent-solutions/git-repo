@@ -11,3 +11,8 @@ __pycache__
 
 # PyCharm related
 /.idea/
+
+# Environment files
+shell.env
+devcontainer-environment-variables.json
+.devcontainer/aws-profile-map.json
