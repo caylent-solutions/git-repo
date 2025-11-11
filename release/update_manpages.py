@@ -180,6 +180,7 @@ def replace_regex(data):
         (r"^\.IP\n(.*:)\n", r".SS \g<1>\n"),
         (r"^\.PP\nDescription", r".SH DETAILS"),
         (r"/tmp/tmp[a-zA-Z0-9_]+/", r"/tmp/XXXXXX/"),
+        (r"\.tox/[^/]+/", r".tox/XXXXX/"),
     )
     for pattern, replacement in regex:
         data = re.sub(pattern, replacement, data, flags=re.M)
