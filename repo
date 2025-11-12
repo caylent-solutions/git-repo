@@ -22,11 +22,13 @@ copy of repo in the checkout.
 """
 
 import datetime
+import json
 import os
 import platform
 import shlex
 import subprocess
 import sys
+import urllib.request
 from typing import NamedTuple
 
 
