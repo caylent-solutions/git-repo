@@ -22,12 +22,14 @@ copy of repo in the checkout.
 """
 
 import datetime
+import json
 import os
 import platform
 import shlex
 import subprocess
 import sys
 from typing import NamedTuple
+import urllib.request
 
 
 # These should never be newer than the main.py version since this needs to be a
