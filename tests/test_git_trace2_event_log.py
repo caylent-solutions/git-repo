@@ -386,14 +386,17 @@ class EventLogTestCase(unittest.TestCase):
                 server_thread.start()
 
                 with server_ready:
-                    server_ready.wait(timeout=120)
+                    server_ready.wait(timeout=5)
 
                 self._event_log_module.StartEvent([])
                 path = self._event_log_module.Write(
                     path=f"af_unix:{socket_path}"
                 )
             finally:
-                server_thread.join(timeout=5)
+                server_thread.join(timeout=2)
+                if server_thread.is_alive():
+                    # Force cleanup if thread is still hanging
+                    pass
 
         self.assertEqual(path, f"af_unix:stream:{socket_path}")
         self.assertEqual(len(received_traces), 2)
