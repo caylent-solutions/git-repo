@@ -1,5 +1,7 @@
 # repo
 
+> **Note:** This is a Caylent fork of the repo tool. For Caylent-specific instructions and usage, see [CAYLENT-README.md](./CAYLENT-README.md).
+
 Repo is a tool built on top of Git.  Repo helps manage many Git repositories,
 does the uploads to revision control systems, and automates parts of the
 development workflow.  Repo is not meant to replace Git, only to make it
