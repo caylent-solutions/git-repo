@@ -2067,7 +2067,7 @@ https://gerrit.googlesource.com/git-repo/+/HEAD/docs/manifest-format.md
         return relpath, worktree, gitdir, objdir
 
     @staticmethod
-    def _CheckLocalPath(path, dir_ok=False, cwd_dot_ok=False):
+    def _CheckLocalPath(path, dir_ok=False, cwd_dot_ok=False, abs_ok=False):
         """Verify |path| is reasonable for use in filesystem paths.
 
         Used with <copyfile> & <linkfile> & <project> elements.
@@ -2081,13 +2081,16 @@ https://gerrit.googlesource.com/git-repo/+/HEAD/docs/manifest-format.md
         * No "~" in paths.
         * No Unicode codepoints that filesystems might elide when normalizing.
         * No relative path components like "." or "..".
-        * No absolute paths.
+        * No absolute paths (unless abs_ok=True).
         * No ".git" or ".repo*" path components.
 
         Args:
             path: The path name to validate.
             dir_ok: Whether |path| may force a directory (e.g. end in a /).
             cwd_dot_ok: Whether |path| may be just ".".
+            abs_ok: Whether absolute paths are allowed (e.g. for linkfile
+                dest). When True, the os.path.isabs() and starts-with-/
+                checks are skipped. All other validations still apply.
 
         Returns:
             None if |path| is OK, a failure message otherwise.
@@ -2160,16 +2163,14 @@ https://gerrit.googlesource.com/git-repo/+/HEAD/docs/manifest-format.md
         # NB: The two abspath checks here are to handle platforms with multiple
         # filesystem path styles (e.g. Windows).
         norm = os.path.normpath(path)
-        if (
-            norm == ".."
-            or (
-                len(norm) >= 3
-                and norm.startswith("..")
-                and resep.match(norm[0])
-            )
-            or os.path.isabs(norm)
-            or norm.startswith("/")
+        if norm == ".." or (
+            len(norm) >= 3
+            and norm.startswith("..")
+            and resep.match(norm[0])
         ):
+            return "path cannot be outside"
+
+        if not abs_ok and (os.path.isabs(norm) or norm.startswith("/")):
             return "path cannot be outside"
 
     @classmethod
@@ -2185,7 +2186,9 @@ https://gerrit.googlesource.com/git-repo/+/HEAD/docs/manifest-format.md
         """
         # |dest| is the file we write to or symlink we create.
         # It is relative to the top of the repo client checkout.
-        msg = cls._CheckLocalPath(dest)
+        # For linkfile elements, absolute dest paths are allowed (spec 17.1).
+        is_linkfile = element == "linkfile"
+        msg = cls._CheckLocalPath(dest, abs_ok=is_linkfile)
         if msg:
             raise ManifestInvalidPathError(
                 f'<{element}> invalid "dest": {dest}: {msg}'
@@ -2193,7 +2196,6 @@ https://gerrit.googlesource.com/git-repo/+/HEAD/docs/manifest-format.md
 
         # |src| is the file we read from or path we point to for symlinks.
         # It is relative to the top of the git project checkout.
-        is_linkfile = element == "linkfile"
         msg = cls._CheckLocalPath(
             src, dir_ok=is_linkfile, cwd_dot_ok=is_linkfile
         )

@@ -1323,7 +1323,6 @@ class CheckLocalPathAbsOkTests(unittest.TestCase):
                 f"absolute path '{path}' should be rejected by default",
             )
 
-    @unittest.expectedFailure  # RED: abs_ok parameter not implemented yet
     def test_spec_17_1_absolute_dest_accepted_linkfile(self):
         """_CheckLocalPath accepts absolute paths when abs_ok=True.
 
@@ -1356,7 +1355,6 @@ class CheckLocalPathAbsOkTests(unittest.TestCase):
                     "copyfile", "foo", path
                 )
 
-    @unittest.expectedFailure  # RED: abs_ok parameter not implemented yet
     def test_spec_17_1_bad_component_git_rejected_abs(self):
         """_CheckLocalPath rejects .git component in absolute paths.
 
@@ -1377,7 +1375,6 @@ class CheckLocalPathAbsOkTests(unittest.TestCase):
                 f"path with .git component '{path}' should be rejected",
             )
 
-    @unittest.expectedFailure  # RED: abs_ok parameter not implemented yet
     def test_spec_17_1_bad_component_repo_rejected_abs(self):
         """_CheckLocalPath rejects .repo component in absolute paths.
 
@@ -1397,7 +1394,6 @@ class CheckLocalPathAbsOkTests(unittest.TestCase):
                 f"path with .repo component '{path}' should be rejected",
             )
 
-    @unittest.expectedFailure  # RED: abs_ok parameter not implemented yet
     def test_spec_17_1_bad_component_dotdot_rejected_abs(self):
         """_CheckLocalPath rejects .. component in absolute paths.
 
@@ -1417,7 +1413,6 @@ class CheckLocalPathAbsOkTests(unittest.TestCase):
                 f"path with .. component '{path}' should be rejected",
             )
 
-    @unittest.expectedFailure  # RED: abs_ok parameter not implemented yet
     def test_spec_17_1_bad_codepoint_rejected_abs(self):
         """_CheckLocalPath rejects bad Unicode codepoints in absolute paths.
 
