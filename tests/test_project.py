@@ -15,11 +15,14 @@
 """Unittests for the project.py module."""
 
 import contextlib
+import json
 import os
 from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+
+import pytest
 
 import error
 import git_command
@@ -540,6 +543,263 @@ class LinkFileAbsoluteDestTests(CopyLinkTestCase):
             os.path.islink(normalized),
             f"symlink should exist at normalized path '{normalized}'",
         )
+
+
+_FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
+
+
+def _load_fixture():
+    """Load version constraint test data from fixture file."""
+    fixture_path = os.path.join(_FIXTURES_DIR, "version_constraints_data.json")
+    with open(fixture_path) as f:
+        return json.load(f)
+
+
+_VC_DATA = _load_fixture()
+_GRI_DATA = _VC_DATA["get_revision_id"]
+
+
+@pytest.mark.unit
+class TestGetRevisionIdVersionConstraints:
+    """Tests for version constraint integration in GetRevisionId().
+
+    Spec reference: Section 17.2 — GetRevisionId integration.
+
+    When revisionExpr contains a PEP 440 constraint, GetRevisionId()
+    should detect it, resolve against available tags, and use the
+    resolved tag for the normal checkout flow.
+    """
+
+    @pytest.mark.xfail(
+        reason="awaiting implementation in E1-F2-S2-T2", strict=True
+    )
+    def test_spec_17_2_get_revision_id_detects_constraint(self):
+        """GetRevisionId detects version constraint in revisionExpr.
+
+        Given: A project with revisionExpr containing a PEP 440 constraint.
+        When: GetRevisionId() is called.
+        Then: is_version_constraint is invoked and detects the constraint.
+        Spec: Section 17.2 — constraint detection triggers resolution.
+        """
+        import version_constraints
+        from unittest.mock import MagicMock, patch
+
+        proj = MagicMock(spec=project.Project)
+        proj.revisionId = None
+        proj.revisionExpr = _GRI_DATA["constraint_revision"]
+        proj.name = "test-project"
+
+        all_refs = {
+            tag: f"commit_{i}" for i, tag in enumerate(_GRI_DATA["remote_tags"])
+        }
+        resolved_tag = _GRI_DATA["resolved_tag"]
+        all_refs[resolved_tag] = _GRI_DATA["resolved_commit_id"]
+
+        # Set up remote mock to convert resolved tag to local ref
+        remote_mock = MagicMock()
+        remote_mock.ToLocal.return_value = resolved_tag
+        proj.GetRemote.return_value = remote_mock
+
+        with patch.object(
+            version_constraints,
+            "is_version_constraint",
+            return_value=True,
+        ) as mock_detect:
+            project.Project.GetRevisionId(proj, all_refs)
+            mock_detect.assert_called_once_with(
+                _GRI_DATA["constraint_revision"]
+            )
+
+    @pytest.mark.xfail(
+        reason="awaiting implementation in E1-F2-S2-T2", strict=True
+    )
+    def test_spec_17_2_get_revision_id_resolves_to_tag(self):
+        """GetRevisionId resolves constraint to highest matching tag.
+
+        Given: A project with a version constraint revisionExpr.
+        When: GetRevisionId() is called with all_refs containing tags.
+        Then: The resolved tag's commit ID is returned via constraint
+            resolution, not via the normal ToLocal path.
+        Spec: Section 17.2 — resolved tag used for checkout.
+        """
+        import version_constraints
+        from unittest.mock import MagicMock, patch
+
+        proj = MagicMock(spec=project.Project)
+        proj.revisionId = None
+        proj.revisionExpr = _GRI_DATA["constraint_revision"]
+        proj.name = "test-project"
+
+        resolved_tag = _GRI_DATA["resolved_tag"]
+        expected_commit = _GRI_DATA["resolved_commit_id"]
+
+        # all_refs maps resolved tag to its commit, but does NOT
+        # contain the constraint string itself — only the integration
+        # code can resolve the constraint to the tag.
+        all_refs = {
+            tag: f"commit_{i}" for i, tag in enumerate(_GRI_DATA["remote_tags"])
+        }
+        all_refs[resolved_tag] = expected_commit
+
+        # ToLocal would not know how to handle a constraint string,
+        # so it should not be called for constraint revisions.
+        remote_mock = MagicMock()
+        remote_mock.ToLocal.side_effect = error.GitError(
+            "ToLocal should not be called for constraint revisions"
+        )
+        proj.GetRemote.return_value = remote_mock
+
+        with patch.object(
+            version_constraints,
+            "is_version_constraint",
+            return_value=True,
+        ):
+            with patch.object(
+                version_constraints,
+                "resolve_version_constraint",
+                return_value=resolved_tag,
+            ):
+                result = project.Project.GetRevisionId(proj, all_refs)
+                assert result == expected_commit, (
+                    f"expected commit '{expected_commit}', got '{result}'"
+                )
+
+    @pytest.mark.xfail(
+        reason="awaiting implementation in E1-F2-S2-T2", strict=True
+    )
+    def test_spec_17_2_get_revision_id_non_constraint_passthrough(self):
+        """Non-constraint revisionExpr passes through without resolution.
+
+        Given: A project with revisionExpr "main" (not a constraint).
+        When: GetRevisionId() is called.
+        Then: resolve_version_constraint is never called.
+        Spec: Section 17.2 — non-constraint passthrough.
+        """
+        import version_constraints
+        from unittest.mock import MagicMock, patch
+
+        proj = MagicMock(spec=project.Project)
+        proj.revisionId = None
+        proj.revisionExpr = _GRI_DATA["non_constraint_revision"]
+        proj.name = "test-project"
+
+        local_ref = "refs/remotes/origin/main"
+        commit_id = "deadbeef12345678"
+        all_refs = {local_ref: commit_id}
+
+        remote_mock = MagicMock()
+        remote_mock.ToLocal.return_value = local_ref
+        proj.GetRemote.return_value = remote_mock
+
+        with patch.object(
+            version_constraints,
+            "is_version_constraint",
+            return_value=False,
+        ) as mock_detect:
+            with patch.object(
+                version_constraints,
+                "resolve_version_constraint",
+            ) as mock_resolve:
+                result = project.Project.GetRevisionId(proj, all_refs)
+                mock_detect.assert_called_once_with(
+                    _GRI_DATA["non_constraint_revision"]
+                )
+                mock_resolve.assert_not_called()
+                assert result == commit_id
+
+    @pytest.mark.xfail(
+        reason="awaiting implementation in E1-F2-S2-T2", strict=True
+    )
+    def test_spec_17_2_get_revision_id_no_match_error(self):
+        """No matching tags raises ManifestInvalidRevisionError.
+
+        Given: A project with a constraint that matches no available tags.
+        When: GetRevisionId() is called.
+        Then: ManifestInvalidRevisionError is raised.
+        Spec: Section 17.2 — error on no match.
+        """
+        import version_constraints
+        from unittest.mock import MagicMock, patch
+
+        proj = MagicMock(spec=project.Project)
+        proj.revisionId = None
+        proj.revisionExpr = _GRI_DATA["no_match_constraint"]
+        proj.name = "test-project"
+
+        all_refs = {
+            tag: f"commit_{i}" for i, tag in enumerate(_GRI_DATA["remote_tags"])
+        }
+
+        with patch.object(
+            version_constraints,
+            "is_version_constraint",
+            return_value=True,
+        ):
+            with patch.object(
+                version_constraints,
+                "resolve_version_constraint",
+                side_effect=error.ManifestInvalidRevisionError(
+                    "no tags match constraint"
+                ),
+            ):
+                with pytest.raises(error.ManifestInvalidRevisionError):
+                    project.Project.GetRevisionId(proj, all_refs)
+
+    @pytest.mark.xfail(
+        reason="awaiting implementation in E1-F2-S2-T2", strict=True
+    )
+    def test_spec_17_2_get_revision_id_collects_remote_tags(self):
+        """GetRevisionId collects tags from all_refs for resolution.
+
+        Given: A project with a constraint revisionExpr and all_refs
+            containing tag entries.
+        When: GetRevisionId() is called.
+        Then: Tag names from all_refs are passed to
+            resolve_version_constraint.
+        Spec: Section 17.2 — tag collection from refs.
+        """
+        import version_constraints
+        from unittest.mock import MagicMock, patch
+
+        proj = MagicMock(spec=project.Project)
+        proj.revisionId = None
+        proj.revisionExpr = _GRI_DATA["constraint_revision"]
+        proj.name = "test-project"
+
+        resolved_tag = _GRI_DATA["resolved_tag"]
+        expected_commit = _GRI_DATA["resolved_commit_id"]
+
+        all_refs = {
+            tag: f"commit_{i}" for i, tag in enumerate(_GRI_DATA["remote_tags"])
+        }
+        all_refs[resolved_tag] = expected_commit
+
+        remote_mock = MagicMock()
+        remote_mock.ToLocal.return_value = resolved_tag
+        proj.GetRemote.return_value = remote_mock
+
+        with patch.object(
+            version_constraints,
+            "is_version_constraint",
+            return_value=True,
+        ):
+            with patch.object(
+                version_constraints,
+                "resolve_version_constraint",
+                return_value=resolved_tag,
+            ) as mock_resolve:
+                project.Project.GetRevisionId(proj, all_refs)
+                # Verify resolve was called with the revision and tag list
+                mock_resolve.assert_called_once()
+                call_args = mock_resolve.call_args
+                assert call_args[0][0] == _GRI_DATA["constraint_revision"], (
+                    "first arg should be the constraint revision"
+                )
+                passed_tags = call_args[0][1]
+                for tag in _GRI_DATA["remote_tags"]:
+                    assert tag in passed_tags, (
+                        f"tag '{tag}' should be in the passed tag list"
+                    )
 
 
 class MigrateWorkTreeTests(unittest.TestCase):
