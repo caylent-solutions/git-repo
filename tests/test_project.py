@@ -358,6 +358,52 @@ class LinkFile(CopyLinkTestCase):
         )
 
 
+class LinkFileDirectoryTargetTests(CopyLinkTestCase):
+    """Verification tests for <linkfile> with directory targets.
+
+    Spec reference: Section 17.3 — Existing behaviors to preserve.
+
+    The fork must not break linkfile with directory targets. When src
+    is a directory, _Link() should create a symlink pointing to that
+    directory relative to the dest location.
+    """
+
+    def LinkFile(self, src, dest):
+        return project._LinkFile(self.worktree, src, self.topdir, dest)
+
+    def test_spec_17_3_linkfile_directory_target_preserved(self):
+        """Linkfile with directory src creates symlink to directory.
+
+        Given: A project containing a subdirectory 'data/configs'.
+        When: A linkfile links 'data/configs' to 'configs' under topdir.
+        Then: A symlink is created at topdir/configs pointing to the
+            directory, and the symlink target is valid.
+        Spec: Section 17.3 — directory linkfile targets preserved.
+        """
+        # Create a directory with a file inside the project worktree.
+        src_dir = os.path.join(self.worktree, "data", "configs")
+        os.makedirs(src_dir)
+        self.touch(os.path.join(src_dir, "settings.json"))
+
+        lf = self.LinkFile("data/configs", "configs")
+        lf._Link()
+
+        dest = os.path.join(self.topdir, "configs")
+        self.assertExists(dest)
+        self.assertTrue(os.path.islink(dest))
+        # The symlink target should be relative, pointing into git-project.
+        link_target = os.readlink(dest)
+        self.assertEqual(
+            os.path.join("git-project", "data", "configs"), link_target
+        )
+        # The file inside the directory should be accessible through the link.
+        linked_file = os.path.join(dest, "settings.json")
+        self.assertTrue(
+            os.path.exists(linked_file),
+            f"File inside linked directory should be accessible: {linked_file}",
+        )
+
+
 class LinkFileAbsoluteDestTests(CopyLinkTestCase):
     """Tests for _LinkFile._Link() with absolute dest paths.
 
