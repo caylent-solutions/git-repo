@@ -43,13 +43,13 @@ For production environments, pin to a specific tag to ensure consistency:
 
 ```bash
 # Install specific tag
-pip install git+https://github.com/caylent-solutions/git-repo@caylent-0.1.2
+pip install git+https://github.com/caylent-solutions/git-repo@caylent-2.0.0
 
 # Initialize with the same pinned tag
-repo init -u <YOUR_MANIFEST_URL> --repo-rev=caylent-0.1.2 --no-repo-verify
+repo init -u <YOUR_MANIFEST_URL> --repo-rev=caylent-2.0.0 --no-repo-verify
 ```
 
-Replace `caylent-0.1.2` with your desired version.
+Replace `caylent-2.0.0` with your desired version.
 
 ### Override Repository URL or Version
 
@@ -73,7 +73,7 @@ repo init -u <YOUR_MANIFEST_URL> \
   --no-repo-verify
 ```
 
-Replace `<ref>` with a tag (e.g., `caylent-0.1.2`), branch (e.g., `main`), or commit hash.
+Replace `<ref>` with a tag (e.g., `caylent-2.0.0`), branch (e.g., `main`), or commit hash.
 
 ## Usage
 
@@ -207,8 +207,8 @@ for details on each fixture file.
 
 1. Update version and create a semver tag:
    ```bash
-   git tag -a caylent-0.1.3 -m "Release caylent-0.1.3"
-   git push origin caylent-0.1.3
+   git tag -a caylent-X.Y.Z -m "Release caylent-X.Y.Z"
+   git push origin caylent-X.Y.Z
    ```
 
 2. Users can then install using the tag as shown in the installation section above.
@@ -225,6 +225,6 @@ git merge upstream/main
 
 ## Releases
 
-Latest release: `caylent-0.1.2`
+Latest release: `caylent-2.0.0`
 
 View all releases: https://github.com/caylent-solutions/git-repo/tags
