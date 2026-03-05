@@ -1641,6 +1641,8 @@ class EnvsubstAbsoluteLinkfileIntegrationTest(unittest.TestCase):
     This validates that the three components (envsubst, manifest_xml,
     project._LinkFile) work together when a linkfile dest contains an
     environment variable that expands to an absolute path.
+
+    Verified: E1-F1-S4-T2 — all assertions pass with E1-F1-S1 + S2 in place.
     """
 
     ENV_VAR_NAME = "CLAUDE_MARKETPLACES_DIR"
