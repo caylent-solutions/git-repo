@@ -1432,3 +1432,196 @@ class CheckLocalPathAbsOkTests(unittest.TestCase):
                 msg,
                 f"path with bad codepoint '{repr(path)}' should be rejected",
             )
+
+
+class CheckLocalPathAbsOkEdgeCaseTests(unittest.TestCase):
+    """Edge case tests for the abs_ok parameter on _CheckLocalPath().
+
+    Spec reference: Section 17.1 — Absolute Linkfile Dest.
+
+    Covers: valid unicode in absolute paths, .git at various positions,
+    deeply nested paths, trailing/double slashes, empty components,
+    and paths that normalize to contain bad components.
+    """
+
+    TRAILING_SLASH_PATHS = (
+        "/home/user/plugins/",
+        "/opt/marketplace/",
+    )
+
+    def test_spec_17_1_unicode_valid_abs_path(self):
+        """Valid unicode characters in absolute paths are accepted.
+
+        Given: _CheckLocalPath called with abs_ok=True.
+        When: Path contains valid (non-dangerous) unicode characters.
+        Then: Returns None (no error).
+        Spec: Section 17.1 — unicode edge case.
+        """
+        valid_unicode_paths = (
+            "/home/ユーザー/plugins/foo",
+            "/opt/café/bar",
+            "/tmp/données/test",
+        )
+        for path in valid_unicode_paths:
+            with self.subTest(path=path):
+                msg = manifest_xml.XmlManifest._CheckLocalPath(
+                    path, abs_ok=True
+                )
+                self.assertIsNone(
+                    msg,
+                    f"valid unicode path '{path}' should be accepted",
+                )
+
+    def test_spec_17_1_unicode_bad_codepoint_abs_path(self):
+        """Bad unicode codepoints in absolute paths are rejected.
+
+        Given: _CheckLocalPath called with abs_ok=True.
+        When: Path contains dangerous unicode codepoints (ZWNJ, RLO, etc.).
+        Then: Returns an error message.
+        Spec: Section 17.1 — bad codepoints always rejected.
+        """
+        bad_unicode_paths = (
+            "/home/\u200cfoo",
+            "/opt/\u202ebar",
+            "/tmp/\ufeffbaz",
+            "/home/\u206afoo",
+        )
+        for path in bad_unicode_paths:
+            with self.subTest(path=repr(path)):
+                msg = manifest_xml.XmlManifest._CheckLocalPath(
+                    path, abs_ok=True
+                )
+                self.assertIsNotNone(
+                    msg,
+                    f"bad unicode path '{repr(path)}' should be rejected",
+                )
+
+    def test_spec_17_1_git_component_various_positions(self):
+        """.git component rejected at any position in absolute paths.
+
+        Given: _CheckLocalPath called with abs_ok=True.
+        When: .git appears at different positions in the path.
+        Then: Returns an error message for all positions.
+        Spec: Section 17.1 — .git always rejected.
+        """
+        git_at_positions = (
+            "/.git/foo/bar",
+            "/home/.git/foo",
+            "/home/user/.git",
+            "/a/b/c/.git/d/e",
+        )
+        for path in git_at_positions:
+            with self.subTest(path=path):
+                msg = manifest_xml.XmlManifest._CheckLocalPath(
+                    path, abs_ok=True
+                )
+                self.assertIsNotNone(
+                    msg,
+                    f".git at '{path}' should be rejected",
+                )
+
+    def test_spec_17_1_deeply_nested_abs_path(self):
+        """Deeply nested absolute paths are accepted when valid.
+
+        Given: _CheckLocalPath called with abs_ok=True.
+        When: Path is deeply nested but contains no bad components.
+        Then: Returns None (no error).
+        Spec: Section 17.1 — deep nesting edge case.
+        """
+        deep_paths = (
+            "/a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p",
+            "/home/user/.claude-marketplaces/v1/plugins/foo/bar/baz",
+        )
+        for path in deep_paths:
+            with self.subTest(path=path):
+                msg = manifest_xml.XmlManifest._CheckLocalPath(
+                    path, abs_ok=True
+                )
+                self.assertIsNone(
+                    msg,
+                    f"deep valid path '{path}' should be accepted",
+                )
+
+    def test_spec_17_1_trailing_slash_abs_path(self):
+        """Absolute paths with trailing slashes accepted with dir_ok.
+
+        Given: _CheckLocalPath called with abs_ok=True, dir_ok=True.
+        When: Path has a trailing slash.
+        Then: Returns None when dir_ok=True.
+        Spec: Section 17.1 — trailing slash edge case.
+        """
+        for path in self.TRAILING_SLASH_PATHS:
+            with self.subTest(path=path):
+                msg = manifest_xml.XmlManifest._CheckLocalPath(
+                    path, abs_ok=True, dir_ok=True
+                )
+                self.assertIsNone(
+                    msg,
+                    f"trailing slash path '{path}' should be accepted "
+                    f"with dir_ok=True",
+                )
+
+    def test_spec_17_1_trailing_slash_rejected_without_dir_ok(self):
+        """Absolute paths with trailing slashes rejected without dir_ok.
+
+        Given: _CheckLocalPath called with abs_ok=True, dir_ok=False.
+        When: Path has a trailing slash.
+        Then: Returns an error message.
+        Spec: Section 17.1 — dir_ok interaction.
+        """
+        for path in self.TRAILING_SLASH_PATHS:
+            with self.subTest(path=path):
+                msg = manifest_xml.XmlManifest._CheckLocalPath(
+                    path, abs_ok=True
+                )
+                self.assertIsNotNone(
+                    msg,
+                    f"trailing slash path '{path}' should be rejected "
+                    f"without dir_ok",
+                )
+
+    def test_spec_17_1_double_slash_abs_path(self):
+        """Absolute paths with double slashes are accepted.
+
+        Given: _CheckLocalPath called with abs_ok=True.
+        When: Path contains double slashes (empty components).
+        Then: Returns None (double slashes produce empty parts stripped
+              by rstrip, not treated as bad components).
+        Spec: Section 17.1 — double slash edge case.
+        """
+        double_slash_paths = (
+            "/home//user/foo",
+            "/opt///plugins/bar",
+        )
+        for path in double_slash_paths:
+            with self.subTest(path=path):
+                msg = manifest_xml.XmlManifest._CheckLocalPath(
+                    path, abs_ok=True
+                )
+                self.assertIsNone(
+                    msg,
+                    f"double slash path '{path}' should be accepted",
+                )
+
+    def test_spec_17_1_normalized_bad_component_abs(self):
+        """Paths normalizing to bad components are rejected.
+
+        Given: _CheckLocalPath called with abs_ok=True.
+        When: Path contains .. that, after normalization, still leaves
+              a bad component like .git or .repo.
+        Then: Returns an error message.
+        Spec: Section 17.1 — normalization edge case.
+        """
+        normalized_bad_paths = (
+            "/foo/../.git/bar",
+            "/home/user/../.repo/config",
+        )
+        for path in normalized_bad_paths:
+            with self.subTest(path=path):
+                msg = manifest_xml.XmlManifest._CheckLocalPath(
+                    path, abs_ok=True
+                )
+                self.assertIsNotNone(
+                    msg,
+                    f"normalized bad path '{path}' should be rejected",
+                )
