@@ -40,6 +40,7 @@ from error import NoManifestException
 from error import RepoError
 from error import UploadError
 import fetch
+import version_constraints
 from git_command import git_require
 from git_command import GitCommand
 from git_config import GetSchemeFromUrl
@@ -1528,6 +1529,27 @@ class Project:
     def GetRevisionId(self, all_refs=None):
         if self.revisionId:
             return self.revisionId
+
+        # PEP 440 version constraint integration (spec 17.2).
+        # Detect constraint syntax and resolve to a concrete tag
+        # before the normal ref-lookup flow.
+        if version_constraints.is_version_constraint(self.revisionExpr):
+            if all_refs is None:
+                raise ManifestInvalidRevisionError(
+                    f"revision {self.revisionExpr} in {self.name} "
+                    "not found: no refs available"
+                )
+            available_tags = list(all_refs.keys())
+            resolved_tag = version_constraints.resolve_version_constraint(
+                self.revisionExpr, available_tags
+            )
+            # The resolved tag is a full ref (e.g. refs/tags/...),
+            # so look it up directly in all_refs.
+            if resolved_tag not in all_refs:
+                raise ManifestInvalidRevisionError(
+                    f"revision {self.revisionExpr} in {self.name} not found"
+                )
+            return all_refs[resolved_tag]
 
         rem = self.GetRemote()
         rev = rem.ToLocal(self.revisionExpr)

@@ -570,9 +570,6 @@ class TestGetRevisionIdVersionConstraints:
     resolved tag for the normal checkout flow.
     """
 
-    @pytest.mark.xfail(
-        reason="awaiting implementation in E1-F2-S2-T2", strict=True
-    )
     def test_spec_17_2_get_revision_id_detects_constraint(self):
         """GetRevisionId detects version constraint in revisionExpr.
 
@@ -610,9 +607,6 @@ class TestGetRevisionIdVersionConstraints:
                 _GRI_DATA["constraint_revision"]
             )
 
-    @pytest.mark.xfail(
-        reason="awaiting implementation in E1-F2-S2-T2", strict=True
-    )
     def test_spec_17_2_get_revision_id_resolves_to_tag(self):
         """GetRevisionId resolves constraint to highest matching tag.
 
@@ -664,9 +658,6 @@ class TestGetRevisionIdVersionConstraints:
                     f"expected commit '{expected_commit}', got '{result}'"
                 )
 
-    @pytest.mark.xfail(
-        reason="awaiting implementation in E1-F2-S2-T2", strict=True
-    )
     def test_spec_17_2_get_revision_id_non_constraint_passthrough(self):
         """Non-constraint revisionExpr passes through without resolution.
 
@@ -707,9 +698,6 @@ class TestGetRevisionIdVersionConstraints:
                 mock_resolve.assert_not_called()
                 assert result == commit_id
 
-    @pytest.mark.xfail(
-        reason="awaiting implementation in E1-F2-S2-T2", strict=True
-    )
     def test_spec_17_2_get_revision_id_no_match_error(self):
         """No matching tags raises ManifestInvalidRevisionError.
 
@@ -745,9 +733,6 @@ class TestGetRevisionIdVersionConstraints:
                 with pytest.raises(error.ManifestInvalidRevisionError):
                     project.Project.GetRevisionId(proj, all_refs)
 
-    @pytest.mark.xfail(
-        reason="awaiting implementation in E1-F2-S2-T2", strict=True
-    )
     def test_spec_17_2_get_revision_id_collects_remote_tags(self):
         """GetRevisionId collects tags from all_refs for resolution.
 
