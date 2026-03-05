@@ -1791,3 +1791,48 @@ class MultipleCheckoutsSameRepoTests(ManifestParseTestCase):
         # Different revisions.
         self.assertEqual(proj_a.revisionExpr, "refs/tags/v1.0.0")
         self.assertEqual(proj_b.revisionExpr, "refs/tags/v2.0.0")
+
+
+class CircularIncludeDetectionTests(ManifestParseTestCase):
+    """Verification tests for circular <include> detection.
+
+    Spec reference: Section 17.3 — Existing behaviors to preserve.
+    When a manifest includes itself (directly or indirectly), the parser
+    must detect the cycle via Python's recursion limit and raise an error
+    rather than recursing infinitely.
+    """
+
+    def test_spec_17_3_circular_include_detection(self):
+        """Verify circular <include> raises an error (spec 17.3).
+
+        A manifest file that includes itself must trigger a RecursionError
+        (subclass of RuntimeError) when the manifest is loaded.
+        """
+        import sys
+
+        # Create a manifest that includes itself.
+        inc_a = os.path.join(self.manifest_dir, "a.xml")
+        with open(inc_a, "w") as fp:
+            fp.write(
+                '<?xml version="1.0" encoding="UTF-8"?>\n'
+                '<manifest>\n  <include name="a.xml" />\n</manifest>\n'
+            )
+
+        manifest = self.getXmlManifest(
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            "<manifest>\n"
+            '  <remote name="test-remote" fetch="http://localhost" />\n'
+            '  <default remote="test-remote" revision="refs/heads/main" />\n'
+            '  <include name="a.xml" />\n'
+            "</manifest>\n"
+        )
+
+        # Lower the recursion limit to make the test fast, then restore it.
+        old_limit = sys.getrecursionlimit()
+        sys.setrecursionlimit(200)
+        try:
+            with self.assertRaises(RuntimeError):
+                # Accessing .projects forces _Load which triggers parsing.
+                _ = manifest.projects
+        finally:
+            sys.setrecursionlimit(old_limit)
