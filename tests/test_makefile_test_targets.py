@@ -14,11 +14,9 @@ import subprocess
 
 import pytest
 
-REPO_ROOT = os.path.join(os.path.dirname(__file__), os.pardir)
-
 
 @pytest.mark.unit
-def test_make_test_runs_pytest():
+def test_make_test_runs_pytest(repo_root):
     """Validate that make test invokes pytest with coverage.
 
     Given: The Makefile has a test target
@@ -27,7 +25,7 @@ def test_make_test_runs_pytest():
     Spec: Plan: Test targets
     """
     result = subprocess.run(
-        ["make", "-n", "-C", REPO_ROOT, "test"],
+        ["make", "-n", "-C", repo_root, "test"],
         capture_output=True,
         text=True,
     )
@@ -41,7 +39,7 @@ def test_make_test_runs_pytest():
 
 
 @pytest.mark.unit
-def test_make_test_unit_uses_marker():
+def test_make_test_unit_uses_marker(repo_root):
     """Validate that make test-unit filters by unit marker.
 
     Given: The Makefile has a test-unit target
@@ -50,7 +48,7 @@ def test_make_test_unit_uses_marker():
     Spec: Plan: Test targets
     """
     result = subprocess.run(
-        ["make", "-n", "-C", REPO_ROOT, "test-unit"],
+        ["make", "-n", "-C", repo_root, "test-unit"],
         capture_output=True,
         text=True,
     )
@@ -64,7 +62,7 @@ def test_make_test_unit_uses_marker():
 
 
 @pytest.mark.unit
-def test_make_test_functional_uses_marker():
+def test_make_test_functional_uses_marker(repo_root):
     """Validate that make test-functional filters by functional marker.
 
     Given: The Makefile has a test-functional target
@@ -73,7 +71,7 @@ def test_make_test_functional_uses_marker():
     Spec: Plan: Test targets
     """
     result = subprocess.run(
-        ["make", "-n", "-C", REPO_ROOT, "test-functional"],
+        ["make", "-n", "-C", repo_root, "test-functional"],
         capture_output=True,
         text=True,
     )
@@ -89,7 +87,7 @@ def test_make_test_functional_uses_marker():
 
 
 @pytest.mark.unit
-def test_make_validate_runs_check_and_test():
+def test_make_validate_runs_check_and_test(repo_root):
     """Validate that make validate composes check and test.
 
     Given: The Makefile has a validate target
@@ -98,13 +96,11 @@ def test_make_validate_runs_check_and_test():
     Spec: Plan: Validate target
     """
     result = subprocess.run(
-        ["make", "-n", "-C", REPO_ROOT, "validate"],
+        ["make", "-n", "-C", repo_root, "validate"],
         capture_output=True,
         text=True,
     )
-    assert result.returncode == 0, (
-        f"make -n validate failed: {result.stderr}"
-    )
+    assert result.returncode == 0, f"make -n validate failed: {result.stderr}"
     # validate should run check (which includes lint + format-check) and test
     assert "ruff check" in result.stdout, (
         f"validate must include lint (ruff check), got: {result.stdout}"
@@ -115,7 +111,7 @@ def test_make_validate_runs_check_and_test():
 
 
 @pytest.mark.unit
-def test_pytest_markers_registered():
+def test_pytest_markers_registered(repo_root):
     """Validate that pyproject.toml registers unit and functional markers.
 
     Given: pyproject.toml exists
@@ -123,7 +119,7 @@ def test_pytest_markers_registered():
     Then: Both 'unit' and 'functional' markers are registered
     Spec: Plan: Pytest config
     """
-    pyproject_path = os.path.join(REPO_ROOT, "pyproject.toml")
+    pyproject_path = os.path.join(repo_root, "pyproject.toml")
     with open(pyproject_path) as f:
         content = f.read()
 
@@ -135,7 +131,7 @@ def test_pytest_markers_registered():
 
 
 @pytest.mark.unit
-def test_pyproject_has_testpaths():
+def test_pyproject_has_testpaths(repo_root):
     """Validate that pyproject.toml configures testpaths.
 
     Given: pyproject.toml exists with pytest config
@@ -143,7 +139,7 @@ def test_pyproject_has_testpaths():
     Then: testpaths is configured
     Spec: AC-6
     """
-    pyproject_path = os.path.join(REPO_ROOT, "pyproject.toml")
+    pyproject_path = os.path.join(repo_root, "pyproject.toml")
     with open(pyproject_path) as f:
         content = f.read()
 
@@ -153,7 +149,7 @@ def test_pyproject_has_testpaths():
 
 
 @pytest.mark.unit
-def test_pyproject_has_marker_comments():
+def test_pyproject_has_marker_comments(repo_root):
     """Validate that pyproject.toml includes comments explaining marker usage.
 
     Given: pyproject.toml exists with pytest markers
@@ -161,7 +157,7 @@ def test_pyproject_has_marker_comments():
     Then: Each marker has a description explaining its purpose
     Spec: AC-DOC-1
     """
-    pyproject_path = os.path.join(REPO_ROOT, "pyproject.toml")
+    pyproject_path = os.path.join(repo_root, "pyproject.toml")
     with open(pyproject_path) as f:
         content = f.read()
 

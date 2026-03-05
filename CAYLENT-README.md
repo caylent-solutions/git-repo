@@ -172,7 +172,7 @@ make format          # Auto-fix formatting issues
 make check           # Lint + format verification (read-only, CI-safe)
 make test            # Run full test suite with coverage
 make test-unit       # Run unit tests only
-make test-functional # Run functional tests only
+make test-functional # Run functional tests (requires SMOKE_TEST_TIMEOUT)
 make validate        # Full CI equivalent: check + test
 make clean           # Remove build artifacts and caches
 ```
@@ -180,12 +180,28 @@ make clean           # Remove build artifacts and caches
 ### Running Tests
 
 ```bash
-# Run full CI validation
+# Run full CI validation (lint + format check + test suite)
 make validate
 
-# Run specific tests
-pytest tests/test_subcmds_envsubst.py
+# Run only unit tests (fast, isolated)
+make test-unit
+
+# Run only functional tests (invoke real commands)
+# Requires SMOKE_TEST_TIMEOUT env var (timeout in seconds for subprocess calls)
+SMOKE_TEST_TIMEOUT=120 make test-functional
+
+# Run full test suite with coverage
+make test
+
+# Run specific test files
+python3 -m pytest tests/test_subcmds_envsubst.py -v
 ```
+
+### Test Fixtures
+
+Shared test fixtures live in `tests/conftest.py` and golden reference
+data files live in `tests/fixtures/`. See `tests/fixtures/README.md`
+for details on each fixture file.
 
 ### Creating a Release
 

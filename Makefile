@@ -25,8 +25,8 @@ test: ## Run full test suite with coverage (pytest + pytest-cov)
 test-unit: ## Run unit tests only (pytest -m unit)
 	python3 -m pytest -m unit
 
-test-functional: ## Run functional tests only (pytest -m functional)
-	python3 -m pytest -m functional
+test-functional: ## Run functional tests only (pytest -m functional — requires SMOKE_TEST_TIMEOUT env var)
+	python3 -m pytest -m functional -o "addopts="
 
 validate: check test ## Full CI equivalent: check + test
 
