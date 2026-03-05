@@ -14,7 +14,9 @@
 
 """Common fixtures for pytests."""
 
+import json
 import pathlib
+import shutil
 
 import pytest
 
@@ -83,12 +85,16 @@ def setup_user_identity(monkeysession, scope="session"):
     monkeysession.setenv("GIT_COMMITTER_EMAIL", "foo@bar.baz")
 
 
+_FIXTURES_DIR = pathlib.Path(__file__).parent / "fixtures"
+
+
 @pytest.fixture
 def mock_manifest_xml(tmp_path):
-    """Create a temporary manifest XML file for testing.
+    """Create a temporary copy of the sample manifest XML for testing.
 
-    Returns the path to a temporary file containing a minimal but valid
-    repo manifest XML document with a remote, default, and project element.
+    Copies the golden fixture file ``tests/fixtures/sample-manifest.xml``
+    into a temporary directory so tests can modify it without affecting
+    the original.
 
     Args:
         tmp_path: pytest built-in fixture providing a temporary directory
@@ -104,25 +110,19 @@ def mock_manifest_xml(tmp_path):
             root = tree.getroot()
             assert root.tag == "manifest"
     """
-    manifest_content = (
-        '<?xml version="1.0" encoding="UTF-8"?>\n'
-        "<manifest>\n"
-        '  <remote name="origin" fetch="https://example.com" />\n'
-        '  <default revision="main" remote="origin" sync-j="4" />\n'
-        '  <project name="platform/build" path="build" />\n'
-        "</manifest>\n"
-    )
-    manifest_file = tmp_path / "manifest.xml"
-    manifest_file.write_text(manifest_content)
-    return str(manifest_file)
+    source = _FIXTURES_DIR / "sample-manifest.xml"
+    dest = tmp_path / "manifest.xml"
+    shutil.copy2(source, dest)
+    return str(dest)
 
 
 @pytest.fixture
 def mock_project_config():
-    """Return a mock project configuration dictionary for testing.
+    """Return a project configuration dictionary loaded from the fixture file.
 
-    Provides a minimal project configuration dict with the standard keys
-    used throughout the git-repo codebase: name, path, remote, and revision.
+    Loads ``tests/fixtures/sample-project-config.json`` and returns the
+    parsed dictionary with standard keys used throughout the git-repo
+    codebase: name, path, remote, and revision.
 
     Returns:
         dict: A dictionary with keys 'name', 'path', 'remote', and 'revision'.
@@ -132,9 +132,6 @@ def mock_project_config():
         def test_project_name(mock_project_config):
             assert mock_project_config["name"] == "platform/build"
     """
-    return {
-        "name": "platform/build",
-        "path": "build",
-        "remote": "origin",
-        "revision": "main",
-    }
+    config_path = _FIXTURES_DIR / "sample-project-config.json"
+    with open(config_path) as f:
+        return json.load(f)
