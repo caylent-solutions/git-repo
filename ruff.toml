@@ -1,0 +1,31 @@
+# Ruff configuration for git-repo (Caylent fork of Google repo tool)
+# This is a large upstream codebase; configuration is tuned to avoid
+# false positives on upstream patterns while catching issues in new code.
+
+target-version = "py37"
+line-length = 80
+
+# Exclude upstream vendored and generated files
+extend-exclude = [
+    ".devcontainer/fix-line-endings.py",
+    # Test fixtures contain intentionally bad code for linter validation
+    "tests/fixtures/",
+]
+
+[lint]
+# Enable pyflakes (F) and pycodestyle error (E) rules by default.
+# E731 is excluded because the upstream codebase uses lambda assignments
+# extensively and changing them is outside the scope of Caylent work.
+select = ["F", "E"]
+ignore = [
+    # Lambda assignment — prevalent in upstream code (10+ instances)
+    "E731",
+    # Line too long — upstream code has many lines over 80 chars;
+    # enforcing this would require reformatting the entire upstream codebase
+    "E501",
+]
+
+[format]
+# Match existing upstream style (Google style uses 4-space indent)
+indent-style = "space"
+quote-style = "double"
