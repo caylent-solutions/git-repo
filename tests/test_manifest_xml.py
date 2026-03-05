@@ -236,7 +236,7 @@ class XmlManifestTests(ManifestParseTestCase):
     def test_empty(self):
         """Parse an 'empty' manifest file."""
         manifest = self.getXmlManifest(
-            '<?xml version="1.0" encoding="UTF-8"?>' "<manifest></manifest>"
+            '<?xml version="1.0" encoding="UTF-8"?><manifest></manifest>'
         )
         self.assertEqual(manifest.remotes, {})
         self.assertEqual(manifest.projects, [])
@@ -253,7 +253,7 @@ class XmlManifestTests(ManifestParseTestCase):
     def test_toxml_empty(self):
         """Verify the ToXml() helper."""
         manifest = self.getXmlManifest(
-            '<?xml version="1.0" encoding="UTF-8"?>' "<manifest></manifest>"
+            '<?xml version="1.0" encoding="UTF-8"?><manifest></manifest>'
         )
         self.assertEqual(
             manifest.ToXml().toxml(), '<?xml version="1.0" ?><manifest/>'
@@ -262,7 +262,7 @@ class XmlManifestTests(ManifestParseTestCase):
     def test_todict_empty(self):
         """Verify the ToDict() helper."""
         manifest = self.getXmlManifest(
-            '<?xml version="1.0" encoding="UTF-8"?>' "<manifest></manifest>"
+            '<?xml version="1.0" encoding="UTF-8"?><manifest></manifest>'
         )
         self.assertEqual(manifest.ToDict(), {})
 
@@ -1289,3 +1289,151 @@ class NormalizeUrlTests(ManifestParseTestCase):
             manifestUrl="ssh://git@github.com/org2/custom_manifest.git",
         )
         self.assertEqual("ssh://git@github.com/org2", remote.resolvedFetchUrl)
+
+
+class CheckLocalPathAbsOkTests(unittest.TestCase):
+    """Tests for the abs_ok parameter on _CheckLocalPath().
+
+    Spec reference: Section 17.1 — Absolute Linkfile Dest.
+
+    When abs_ok=True, absolute paths should pass validation.
+    When abs_ok=False (default), absolute paths should be rejected.
+    Bad components (.git, .repo, ..) and bad Unicode codepoints must
+    still be rejected regardless of abs_ok.
+    """
+
+    ABSOLUTE_PATHS = (
+        "/home/user/.claude-marketplaces/foo",
+        "/opt/plugins/bar",
+        "/tmp/test-dest",
+    )
+
+    def test_spec_17_1_abs_ok_parameter_default_false(self):
+        """_CheckLocalPath rejects absolute paths by default.
+
+        Given: _CheckLocalPath called without abs_ok (default False).
+        When: Called with an absolute path.
+        Then: Returns an error message (not None).
+        Spec: Section 17.1 — backward compatibility.
+        """
+        for path in self.ABSOLUTE_PATHS:
+            msg = manifest_xml.XmlManifest._CheckLocalPath(path)
+            self.assertIsNotNone(
+                msg,
+                f"absolute path '{path}' should be rejected by default",
+            )
+
+    @unittest.expectedFailure  # RED: abs_ok parameter not implemented yet
+    def test_spec_17_1_absolute_dest_accepted_linkfile(self):
+        """_CheckLocalPath accepts absolute paths when abs_ok=True.
+
+        Given: _CheckLocalPath called with abs_ok=True.
+        When: Called with a valid absolute path.
+        Then: Returns None (no error).
+        Spec: Section 17.1 — absolute dest accepted for linkfile.
+        """
+        for path in self.ABSOLUTE_PATHS:
+            msg = manifest_xml.XmlManifest._CheckLocalPath(path, abs_ok=True)
+            self.assertIsNone(
+                msg,
+                f"absolute path '{path}' should be accepted with abs_ok=True",
+            )
+
+    def test_spec_17_1_absolute_dest_rejected_copyfile(self):
+        """_ValidateFilePaths rejects absolute dest for copyfile.
+
+        Given: _ValidateFilePaths called for copyfile element.
+        When: dest is an absolute path.
+        Then: ManifestInvalidPathError is raised.
+        Spec: Section 17.1 — copyfile dest remains restricted.
+        """
+        for path in self.ABSOLUTE_PATHS:
+            with self.assertRaises(
+                error.ManifestInvalidPathError,
+                msg=f"copyfile absolute dest '{path}' should be rejected",
+            ):
+                manifest_xml.XmlManifest._ValidateFilePaths(
+                    "copyfile", "foo", path
+                )
+
+    @unittest.expectedFailure  # RED: abs_ok parameter not implemented yet
+    def test_spec_17_1_bad_component_git_rejected_abs(self):
+        """_CheckLocalPath rejects .git component in absolute paths.
+
+        Given: _CheckLocalPath called with abs_ok=True.
+        When: Path contains a .git component.
+        Then: Returns an error message.
+        Spec: Section 17.1 — bad components still rejected.
+        """
+        bad_paths = (
+            "/home/.git/foo",
+            "/opt/.git/bar",
+            "/home/user/.GIT/baz",
+        )
+        for path in bad_paths:
+            msg = manifest_xml.XmlManifest._CheckLocalPath(path, abs_ok=True)
+            self.assertIsNotNone(
+                msg,
+                f"path with .git component '{path}' should be rejected",
+            )
+
+    @unittest.expectedFailure  # RED: abs_ok parameter not implemented yet
+    def test_spec_17_1_bad_component_repo_rejected_abs(self):
+        """_CheckLocalPath rejects .repo component in absolute paths.
+
+        Given: _CheckLocalPath called with abs_ok=True.
+        When: Path contains a .repo component.
+        Then: Returns an error message.
+        Spec: Section 17.1 — bad components still rejected.
+        """
+        bad_paths = (
+            "/home/.repo/foo",
+            "/opt/.repoconfig/bar",
+        )
+        for path in bad_paths:
+            msg = manifest_xml.XmlManifest._CheckLocalPath(path, abs_ok=True)
+            self.assertIsNotNone(
+                msg,
+                f"path with .repo component '{path}' should be rejected",
+            )
+
+    @unittest.expectedFailure  # RED: abs_ok parameter not implemented yet
+    def test_spec_17_1_bad_component_dotdot_rejected_abs(self):
+        """_CheckLocalPath rejects .. component in absolute paths.
+
+        Given: _CheckLocalPath called with abs_ok=True.
+        When: Path contains a .. component.
+        Then: Returns an error message.
+        Spec: Section 17.1 — bad components still rejected.
+        """
+        bad_paths = (
+            "/home/../etc/passwd",
+            "/opt/foo/../../bar",
+        )
+        for path in bad_paths:
+            msg = manifest_xml.XmlManifest._CheckLocalPath(path, abs_ok=True)
+            self.assertIsNotNone(
+                msg,
+                f"path with .. component '{path}' should be rejected",
+            )
+
+    @unittest.expectedFailure  # RED: abs_ok parameter not implemented yet
+    def test_spec_17_1_bad_codepoint_rejected_abs(self):
+        """_CheckLocalPath rejects bad Unicode codepoints in absolute paths.
+
+        Given: _CheckLocalPath called with abs_ok=True.
+        When: Path contains Unicode combining/directional characters.
+        Then: Returns an error message.
+        Spec: Section 17.1 — bad codepoints still rejected.
+        """
+        bad_paths = (
+            "/home/foo\u200cbar",
+            "/opt/\u202ebar",
+            "/tmp/\u200dtest",
+        )
+        for path in bad_paths:
+            msg = manifest_xml.XmlManifest._CheckLocalPath(path, abs_ok=True)
+            self.assertIsNotNone(
+                msg,
+                f"path with bad codepoint '{repr(path)}' should be rejected",
+            )
