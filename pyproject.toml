@@ -35,6 +35,10 @@ markers = [
     # Use @pytest.mark.functional for tests that invoke real commands or I/O
     "functional: Functional tests",
 ]
+# Exclude smoke tests from default test runs to prevent recursion.
+# Smoke tests invoke make targets via subprocess, so running them
+# inside make test would cause infinite recursion.
+addopts = "--ignore=tests/test_harness_smoke.py"
 
 [tool.coverage.run]
 source = ["."]

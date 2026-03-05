@@ -13,9 +13,6 @@ import subprocess
 
 import pytest
 
-REPO_ROOT = os.path.join(os.path.dirname(__file__), os.pardir)
-MAKEFILE_PATH = os.path.join(REPO_ROOT, "Makefile")
-
 REQUIRED_PHONY_TARGETS = frozenset(
     [
         "lint",
@@ -32,14 +29,15 @@ REQUIRED_PHONY_TARGETS = frozenset(
 
 
 @pytest.fixture
-def makefile_content():
+def makefile_content(repo_root):
     """Read the Makefile content."""
-    with open(MAKEFILE_PATH) as f:
+    makefile_path = os.path.join(repo_root, "Makefile")
+    with open(makefile_path) as f:
         return f.read()
 
 
 @pytest.mark.unit
-def test_makefile_syntax_valid():
+def test_makefile_syntax_valid(repo_root):
     """Validate that the Makefile is parsable by GNU Make.
 
     Given: The Makefile exists at repo root
@@ -47,8 +45,9 @@ def test_makefile_syntax_valid():
     Then: It exits with code 0 (no syntax errors)
     Spec: Plan: Makefile
     """
+    makefile_path = os.path.join(repo_root, "Makefile")
     result = subprocess.run(
-        ["make", "-n", "-f", MAKEFILE_PATH, "help"],
+        ["make", "-n", "-f", makefile_path, "help"],
         capture_output=True,
         text=True,
     )
@@ -86,7 +85,7 @@ def test_makefile_has_all_phony_targets(makefile_content):
 
 
 @pytest.mark.unit
-def test_make_help_prints_output():
+def test_make_help_prints_output(repo_root):
     """Validate that make help prints target descriptions.
 
     Given: The Makefile exists with a help target
@@ -95,7 +94,7 @@ def test_make_help_prints_output():
     Spec: Plan: Makefile
     """
     result = subprocess.run(
-        ["make", "-C", REPO_ROOT, "help"],
+        ["make", "-C", repo_root, "help"],
         capture_output=True,
         text=True,
     )
@@ -137,7 +136,7 @@ def test_check_depends_on_lint(makefile_content):
 
 
 @pytest.mark.unit
-def test_clean_removes_caches():
+def test_clean_removes_caches(repo_root):
     """Validate that make clean removes expected cache directories.
 
     Given: Cache directories exist
@@ -146,11 +145,13 @@ def test_clean_removes_caches():
     Spec: Plan: Makefile
     """
     result = subprocess.run(
-        ["make", "-n", "-C", REPO_ROOT, "clean"],
+        ["make", "-n", "-C", repo_root, "clean"],
         capture_output=True,
         text=True,
     )
-    assert result.returncode == 0, f"make clean --dry-run failed: {result.stderr}"
+    assert result.returncode == 0, (
+        f"make clean --dry-run failed: {result.stderr}"
+    )
     dry_output = result.stdout
     for cache in [
         "__pycache__",
@@ -173,9 +174,9 @@ def test_each_target_has_help_comment(makefile_content):
     """
     for target in REQUIRED_PHONY_TARGETS:
         pattern = rf"^{re.escape(target)}:.*##\s+\S+"
-        assert re.search(
-            pattern, makefile_content, re.MULTILINE
-        ), f"Target '{target}' missing ## help comment"
+        assert re.search(pattern, makefile_content, re.MULTILINE), (
+            f"Target '{target}' missing ## help comment"
+        )
 
 
 @pytest.mark.unit
@@ -196,4 +197,6 @@ def test_clean_target_no_error_suppression(makefile_content):
             if line and not line[0].isspace() and not line.startswith("\t"):
                 break
             assert "|| true" not in line, "clean target must not use || true"
-            assert "2>/dev/null" not in line, "clean target must not suppress stderr"
+            assert "2>/dev/null" not in line, (
+                "clean target must not suppress stderr"
+            )

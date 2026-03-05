@@ -11,11 +11,9 @@ import subprocess
 
 import pytest
 
-REPO_ROOT = os.path.join(os.path.dirname(__file__), os.pardir)
-
 
 @pytest.mark.unit
-def test_markdownlint_config_valid():
+def test_markdownlint_config_valid(repo_root):
     """Validate that .markdownlint.json is valid configuration.
 
     Given: .markdownlint.json exists at repo root
@@ -23,7 +21,7 @@ def test_markdownlint_config_valid():
     Then: It does not report a config error
     Spec: Plan: Linter config
     """
-    config_path = os.path.join(REPO_ROOT, ".markdownlint.json")
+    config_path = os.path.join(repo_root, ".markdownlint.json")
     assert os.path.isfile(config_path), (
         f".markdownlint.json must exist at repo root: {config_path}"
     )
@@ -41,7 +39,7 @@ def test_markdownlint_config_valid():
 
 
 @pytest.mark.unit
-def test_markdownlint_catches_known_bad_md():
+def test_markdownlint_catches_known_bad_md(repo_root):
     """Validate that markdownlint catches errors in known-bad fixture.
 
     Given: A known-bad Markdown file exists in tests/fixtures/
@@ -50,19 +48,19 @@ def test_markdownlint_catches_known_bad_md():
     Spec: Plan: Linter config
     """
     bad_file = os.path.join(
-        REPO_ROOT, "tests", "fixtures", "linter-test-bad.md"
+        repo_root, "tests", "fixtures", "linter-test-bad.md"
     )
-    assert os.path.isfile(bad_file), (
-        f"Known-bad fixture must exist: {bad_file}"
-    )
-    config_path = os.path.join(REPO_ROOT, ".markdownlint.json")
+    assert os.path.isfile(bad_file), f"Known-bad fixture must exist: {bad_file}"
+    config_path = os.path.join(repo_root, ".markdownlint.json")
     # Use --ignore-path /dev/null to override .markdownlintignore
     # which excludes tests/fixtures/ from normal linting
     result = subprocess.run(
         [
             "markdownlint",
-            "--config", config_path,
-            "--ignore-path", "/dev/null",
+            "--config",
+            config_path,
+            "--ignore-path",
+            "/dev/null",
             bad_file,
         ],
         capture_output=True,

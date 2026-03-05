@@ -11,11 +11,9 @@ import subprocess
 
 import pytest
 
-REPO_ROOT = os.path.join(os.path.dirname(__file__), os.pardir)
-
 
 @pytest.mark.unit
-def test_ruff_config_valid_syntax():
+def test_ruff_config_valid_syntax(repo_root):
     """Validate that ruff.toml is valid ruff configuration.
 
     Given: ruff.toml exists at repo root
@@ -23,13 +21,20 @@ def test_ruff_config_valid_syntax():
     Then: ruff does not report a config error
     Spec: Plan: Linter config
     """
-    config_path = os.path.join(REPO_ROOT, "ruff.toml")
+    config_path = os.path.join(repo_root, "ruff.toml")
     assert os.path.isfile(config_path), (
         f"ruff.toml must exist at repo root: {config_path}"
     )
     # ruff check on an empty input with the config validates config syntax
     result = subprocess.run(
-        ["ruff", "check", "--config", config_path, "--stdin-filename", "test.py"],
+        [
+            "ruff",
+            "check",
+            "--config",
+            config_path,
+            "--stdin-filename",
+            "test.py",
+        ],
         input="",
         capture_output=True,
         text=True,
@@ -40,7 +45,7 @@ def test_ruff_config_valid_syntax():
 
 
 @pytest.mark.unit
-def test_ruff_catches_known_bad_python():
+def test_ruff_catches_known_bad_python(repo_root):
     """Validate that ruff catches lint errors in known-bad fixture.
 
     Given: A known-bad Python file exists in tests/fixtures/
@@ -48,11 +53,11 @@ def test_ruff_catches_known_bad_python():
     Then: ruff reports errors and exits non-zero
     Spec: Plan: Linter config
     """
-    bad_file = os.path.join(REPO_ROOT, "tests", "fixtures", "linter-test-bad.py")
-    assert os.path.isfile(bad_file), (
-        f"Known-bad fixture must exist: {bad_file}"
+    bad_file = os.path.join(
+        repo_root, "tests", "fixtures", "linter-test-bad.py"
     )
-    config_path = os.path.join(REPO_ROOT, "ruff.toml")
+    assert os.path.isfile(bad_file), f"Known-bad fixture must exist: {bad_file}"
+    config_path = os.path.join(repo_root, "ruff.toml")
     result = subprocess.run(
         ["ruff", "check", "--config", config_path, bad_file],
         capture_output=True,

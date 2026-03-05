@@ -12,71 +12,34 @@ import subprocess
 
 import pytest
 
-REPO_ROOT = os.path.join(os.path.dirname(__file__), os.pardir)
-
 
 @pytest.mark.unit
-def test_make_lint_calls_ruff():
-    """Validate that make lint invokes ruff check.
+@pytest.mark.parametrize(
+    "tool",
+    ["ruff check", "markdownlint", "yamllint"],
+    ids=["ruff", "markdownlint", "yamllint"],
+)
+def test_make_lint_calls_tool(repo_root, tool):
+    """Validate that make lint invokes expected linting tools.
 
     Given: The Makefile has a lint target
     When: make lint is dry-run
-    Then: The commands include 'ruff check'
+    Then: The commands include the expected tool
     Spec: Plan: Lint targets
     """
     result = subprocess.run(
-        ["make", "-n", "-C", REPO_ROOT, "lint"],
+        ["make", "-n", "-C", repo_root, "lint"],
         capture_output=True,
         text=True,
     )
     assert result.returncode == 0, f"make -n lint failed: {result.stderr}"
-    assert "ruff check" in result.stdout, (
-        f"lint target must invoke 'ruff check', got: {result.stdout}"
+    assert tool in result.stdout, (
+        f"lint target must invoke '{tool}', got: {result.stdout}"
     )
 
 
 @pytest.mark.unit
-def test_make_lint_calls_markdownlint():
-    """Validate that make lint invokes markdownlint.
-
-    Given: The Makefile has a lint target
-    When: make lint is dry-run
-    Then: The commands include 'markdownlint'
-    Spec: Plan: Lint targets
-    """
-    result = subprocess.run(
-        ["make", "-n", "-C", REPO_ROOT, "lint"],
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0, f"make -n lint failed: {result.stderr}"
-    assert "markdownlint" in result.stdout, (
-        f"lint target must invoke 'markdownlint', got: {result.stdout}"
-    )
-
-
-@pytest.mark.unit
-def test_make_lint_calls_yamllint():
-    """Validate that make lint invokes yamllint.
-
-    Given: The Makefile has a lint target
-    When: make lint is dry-run
-    Then: The commands include 'yamllint'
-    Spec: Plan: Lint targets
-    """
-    result = subprocess.run(
-        ["make", "-n", "-C", REPO_ROOT, "lint"],
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0, f"make -n lint failed: {result.stderr}"
-    assert "yamllint" in result.stdout, (
-        f"lint target must invoke 'yamllint', got: {result.stdout}"
-    )
-
-
-@pytest.mark.unit
-def test_make_format_calls_ruff_format():
+def test_make_format_calls_ruff_format(repo_root):
     """Validate that make format invokes ruff format.
 
     Given: The Makefile has a format target
@@ -85,7 +48,7 @@ def test_make_format_calls_ruff_format():
     Spec: Plan: Format target
     """
     result = subprocess.run(
-        ["make", "-n", "-C", REPO_ROOT, "format"],
+        ["make", "-n", "-C", repo_root, "format"],
         capture_output=True,
         text=True,
     )
@@ -104,7 +67,7 @@ def test_make_format_calls_ruff_format():
 
 
 @pytest.mark.unit
-def test_make_check_is_readonly():
+def test_make_check_is_readonly(repo_root):
     """Validate that make check is read-only (uses --check for format verification).
 
     Given: The Makefile has check and format-check targets
@@ -113,18 +76,20 @@ def test_make_check_is_readonly():
     Spec: Plan: Check target
     """
     result = subprocess.run(
-        ["make", "-n", "-C", REPO_ROOT, "format-check"],
+        ["make", "-n", "-C", repo_root, "format-check"],
         capture_output=True,
         text=True,
     )
-    assert result.returncode == 0, f"make -n format-check failed: {result.stderr}"
+    assert result.returncode == 0, (
+        f"make -n format-check failed: {result.stderr}"
+    )
     assert "ruff format" in result.stdout and "--check" in result.stdout, (
         f"format-check target must invoke 'ruff format --check', got: {result.stdout}"
     )
 
 
 @pytest.mark.unit
-def test_lint_target_has_tool_comments():
+def test_lint_target_has_tool_comments(repo_root):
     """Validate that lint target Makefile comments document which tools are invoked.
 
     Given: The Makefile has a lint target
@@ -132,13 +97,15 @@ def test_lint_target_has_tool_comments():
     Then: The lint target's help comment mentions the tools it uses
     Spec: AC-DOC-1
     """
-    makefile_path = os.path.join(REPO_ROOT, "Makefile")
+    makefile_path = os.path.join(repo_root, "Makefile")
     with open(makefile_path) as f:
         content = f.read()
     match = re.search(r"^lint:.*##\s*(.+)", content, re.MULTILINE)
     assert match, "lint target must have a ## help comment"
     comment = match.group(1).lower()
-    assert "ruff" in comment, f"lint help comment must mention ruff, got: {comment}"
+    assert "ruff" in comment, (
+        f"lint help comment must mention ruff, got: {comment}"
+    )
     assert "markdownlint" in comment, (
         f"lint help comment must mention markdownlint, got: {comment}"
     )
