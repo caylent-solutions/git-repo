@@ -179,26 +179,6 @@ def test_each_target_has_help_comment(makefile_content):
 
 
 @pytest.mark.unit
-def test_placeholder_targets_fail_fast():
-    """Validate that unconfigured placeholder targets exit non-zero.
-
-    Given: Placeholder targets are not yet implemented
-    When: A placeholder target is invoked
-    Then: It exits with non-zero code and prints an error to stderr
-    Spec: Plan: Fail-fast principle
-    """
-    placeholder_targets = ["test", "test-unit", "test-functional"]
-    for target in placeholder_targets:
-        result = subprocess.run(
-            ["make", "-C", REPO_ROOT, target],
-            capture_output=True,
-            text=True,
-        )
-        assert result.returncode != 0, f"Placeholder target '{target}' should exit non-zero"
-        assert "ERROR" in result.stderr, f"Placeholder target '{target}' should print error to stderr"
-
-
-@pytest.mark.unit
 def test_clean_target_no_error_suppression(makefile_content):
     """Validate that the clean target does not suppress errors.
 

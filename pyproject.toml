@@ -27,8 +27,18 @@ skip = [".devcontainer/fix-line-endings.py"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+testpaths = ["tests"]
 markers = [
     "skip_cq: Skip tests in the CQ. Should be rarely used!",
+    # Use @pytest.mark.unit for fast, isolated unit tests
     "unit: Unit tests",
+    # Use @pytest.mark.functional for tests that invoke real commands or I/O
     "functional: Functional tests",
 ]
+
+[tool.coverage.run]
+source = ["."]
+omit = ["tests/*", "setup.py"]
+
+[tool.coverage.report]
+show_missing = true

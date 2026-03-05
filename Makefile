@@ -19,14 +19,14 @@ format-check: ## Verify formatting without modifying files (CI-safe)
 
 check: lint format-check ## Run all checks: lint + format verification (read-only, CI-safe)
 
-test: ## Run full test suite with coverage
-	@echo 'ERROR: test target not yet configured (see E0-F1-S1-T3)' >&2 && exit 1
+test: ## Run full test suite with coverage (pytest + pytest-cov)
+	python3 -m pytest --cov --cov-report=term-missing
 
 test-unit: ## Run unit tests only (pytest -m unit)
-	@echo 'ERROR: test-unit target not yet configured (see E0-F1-S1-T3)' >&2 && exit 1
+	python3 -m pytest -m unit
 
 test-functional: ## Run functional tests only (pytest -m functional)
-	@echo 'ERROR: test-functional target not yet configured (see E0-F1-S1-T3)' >&2 && exit 1
+	python3 -m pytest -m functional
 
 validate: check test ## Full CI equivalent: check + test
 
