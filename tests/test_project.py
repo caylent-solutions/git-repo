@@ -371,7 +371,6 @@ class LinkFileAbsoluteDestTests(CopyLinkTestCase):
     def LinkFile(self, src, dest):
         return project._LinkFile(self.worktree, src, self.topdir, dest)
 
-    @unittest.expectedFailure  # RED: absolute dest not implemented in _Link()
     def test_spec_17_1_link_absolute_dest_creates_parents(self):
         """_Link() creates parent directories for absolute dest.
 
@@ -391,7 +390,6 @@ class LinkFileAbsoluteDestTests(CopyLinkTestCase):
             f"parent dir '{parent_dir}' should exist",
         )
 
-    @unittest.expectedFailure  # RED: absolute dest not implemented in _Link()
     def test_spec_17_1_link_absolute_dest_creates_symlink(self):
         """_Link() creates symlink at the exact absolute dest path.
 
@@ -433,7 +431,6 @@ class LinkFileAbsoluteDestTests(CopyLinkTestCase):
             f"relative dest should create symlink at '{expected}'",
         )
 
-    @unittest.expectedFailure  # RED: absolute dest not implemented in _Link()
     def test_spec_17_1_link_absolute_dest_existing_parent_ok(self):
         """_Link() works when absolute dest parent directory already exists.
 
@@ -453,6 +450,20 @@ class LinkFileAbsoluteDestTests(CopyLinkTestCase):
             os.path.islink(abs_dest),
             f"symlink should exist at '{abs_dest}'",
         )
+
+    def test_spec_17_1_link_absolute_dest_rejects_path_traversal(self):
+        """_Link() rejects absolute dest with '..' traversal components.
+
+        Given: A _LinkFile with absolute dest containing '..'.
+        When: _Link() is called.
+        Then: ManifestInvalidPathError is raised.
+        Spec: Section 17.1 — defense-in-depth path validation.
+        """
+        src = os.path.join(self.worktree, "plugin.txt")
+        self.touch(src)
+        abs_dest = os.path.join(self.tempdir, "abs-out", "..", "escape", "link")
+        lf = self.LinkFile("plugin.txt", abs_dest)
+        self.assertRaises(error.ManifestInvalidPathError, lf._Link)
 
 
 class MigrateWorkTreeTests(unittest.TestCase):

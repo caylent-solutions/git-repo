@@ -490,7 +490,24 @@ class _LinkFile:
         if not glob.has_magic(src):
             # Entity does not contain a wild card so just a simple one to one
             # link operation.
-            dest = _SafeExpandPath(self.topdir, self.dest, skipfinal=True)
+            if os.path.isabs(self.dest):
+                # Absolute dest: use the path directly (spec 17.1).
+                # Defense-in-depth: reject path traversal components even
+                # though _CheckLocalPath already validated at manifest parse
+                # time. Split on both / and os.sep to match _SafeExpandPath.
+                resep = re.compile(r"[/%s]" % re.escape(os.path.sep))
+                components = resep.split(self.dest)
+                if ".." in components:
+                    raise ManifestInvalidPathError(
+                        f'{self.dest}: ".." not allowed in absolute dest'
+                    )
+                dest = os.path.normpath(self.dest)
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
+            else:
+                # Relative dest: resolve under topdir via _SafeExpandPath.
+                dest = _SafeExpandPath(
+                    self.topdir, self.dest, skipfinal=True
+                )
             # dest & src are absolute paths at this point.  Make sure the target
             # of the symlink is relative in the context of the repo client
             # checkout.
