@@ -845,6 +845,83 @@ class TestGetRevisionIdVersionConstraints:
                 )
 
 
+_INTEG_DATA = _VC_DATA["integration"]
+
+
+class TestGetRevisionIdIntegration:
+    """Integration tests for version constraint resolution through GetRevisionId.
+
+    Spec reference: Section 5.5 and 17.2.
+
+    These tests exercise the full pipeline: GetRevisionId() calls the real
+    version_constraints module (no mocking of is_version_constraint or
+    resolve_version_constraint) to detect and resolve PEP 440 constraints
+    against mock tag sets. Each constraint type (compatible release, wildcard,
+    range) is parameterized to verify correct resolution behavior.
+    """
+
+    @staticmethod
+    def _build_all_refs(tags, expected_tag, expected_commit):
+        """Build an all_refs dict mapping tags to commit IDs.
+
+        Args:
+            tags: List of tag ref strings.
+            expected_tag: The tag that should resolve, mapped to expected_commit.
+            expected_commit: The commit ID for the expected resolved tag.
+
+        Returns:
+            Dict mapping tag ref strings to commit ID strings.
+        """
+        all_refs = {tag: f"commit_{i}" for i, tag in enumerate(tags)}
+        all_refs[expected_tag] = expected_commit
+        return all_refs
+
+    @pytest.mark.parametrize(
+        "constraint_type",
+        [
+            pytest.param(
+                "compatible_release",
+                id="compatible_release_~=1.2.0_resolves_to_1.2.7",
+            ),
+            pytest.param(
+                "wildcard",
+                id="wildcard_*_resolves_to_latest",
+            ),
+            pytest.param(
+                "range",
+                id="range_>=1.0.0,<2.0.0_resolves_to_1.3.0",
+            ),
+        ],
+    )
+    def test_spec_5_5_integration_constraint_resolution(self, constraint_type):
+        """Integration: PEP 440 constraint resolves to correct tag via GetRevisionId.
+
+        Given: Mock tags from fixture data and a constraint revision.
+        When: GetRevisionId() runs with real version_constraints module.
+        Then: The correct tag's commit ID is returned.
+        Spec: Section 5.5 — constraint types and resolution behavior.
+        """
+        from unittest.mock import MagicMock
+
+        case = _INTEG_DATA[constraint_type]
+        proj = MagicMock(spec=project.Project)
+        proj.revisionId = None
+        proj.revisionExpr = case["revision"]
+        proj.name = "test-project"
+
+        all_refs = self._build_all_refs(
+            _INTEG_DATA["available_tags"],
+            case["expected_tag"],
+            case["expected_commit"],
+        )
+
+        result = project.Project.GetRevisionId(proj, all_refs)
+        assert result == case["expected_commit"], (
+            f"{constraint_type} constraint '{case['revision']}' should resolve to "
+            f"'{case['expected_commit']}', got '{result}'"
+        )
+
+
 class MigrateWorkTreeTests(unittest.TestCase):
     """Check _MigrateOldWorkTreeGitDir handling."""
 
