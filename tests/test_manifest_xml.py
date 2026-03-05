@@ -1732,3 +1732,62 @@ class EnvsubstAbsoluteLinkfileIntegrationTest(unittest.TestCase):
             os.path.isdir(parent_dir),
             f"parent dir '{parent_dir}' should exist",
         )
+
+
+class MultipleCheckoutsSameRepoTests(ManifestParseTestCase):
+    """Verification tests for multiple independent checkouts of the same repo.
+
+    Spec reference: Section 17.3 — Existing behaviors to preserve.
+
+    The fork must not break the ability to declare the same repository
+    multiple times in a manifest with different paths and revisions.
+    Each entry becomes an independent Project instance.
+    """
+
+    def test_spec_17_3_multiple_checkouts_same_repo(self):
+        """Multiple <project> entries for same repo parse as independent projects.
+
+        Given: A manifest with two <project> entries referencing the same
+            remote repo name but different paths and revisions.
+        When: The manifest is parsed.
+        Then: Two independent Project objects are created with distinct
+            paths and revisions.
+        Spec: Section 17.3 — multiple independent checkouts preserved.
+        """
+        manifest = self.getXmlManifest(
+            """
+<manifest>
+  <remote name="test-remote" fetch="http://localhost" />
+  <default remote="test-remote" revision="refs/heads/main" />
+  <project name="shared-repo" path="checkout-a"
+           revision="refs/tags/v1.0.0" />
+  <project name="shared-repo" path="checkout-b"
+           revision="refs/tags/v2.0.0" />
+</manifest>
+"""
+        )
+        self.assertEqual(
+            len(manifest.projects),
+            2,
+            "Manifest should contain exactly 2 project entries",
+        )
+
+        projects_by_path = {p.relpath: p for p in manifest.projects}
+        self.assertIn("checkout-a", projects_by_path)
+        self.assertIn("checkout-b", projects_by_path)
+
+        proj_a = projects_by_path["checkout-a"]
+        proj_b = projects_by_path["checkout-b"]
+
+        # Same repo name but different paths.
+        self.assertEqual(proj_a.name, "shared-repo")
+        self.assertEqual(proj_b.name, "shared-repo")
+        self.assertNotEqual(
+            proj_a.relpath,
+            proj_b.relpath,
+            "Projects should have different checkout paths",
+        )
+
+        # Different revisions.
+        self.assertEqual(proj_a.revisionExpr, "refs/tags/v1.0.0")
+        self.assertEqual(proj_b.revisionExpr, "refs/tags/v2.0.0")
