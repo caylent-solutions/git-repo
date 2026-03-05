@@ -109,9 +109,6 @@ class TestIsVersionConstraint:
     (~=, >=, <, <=, >, !=, ==, *).
     """
 
-    @pytest.mark.xfail(
-        reason="awaiting implementation in E1-F2-S1-T2", strict=True
-    )
     @pytest.mark.parametrize("revision", _CONSTRAINT_TRUE_CASES)
     def test_spec_5_5_is_constraint_true(self, revision):
         """PEP 440 constraint revisions are detected as constraints.
@@ -125,9 +122,6 @@ class TestIsVersionConstraint:
             f"'{revision}' should be a version constraint"
         )
 
-    @pytest.mark.xfail(
-        reason="awaiting implementation in E1-F2-S1-T2", strict=True
-    )
     @pytest.mark.parametrize("revision", _CONSTRAINT_FALSE_CASES)
     def test_spec_5_5_is_constraint_false(self, revision):
         """Non-constraint revisions are NOT detected as constraints.
@@ -153,9 +147,6 @@ class TestResolveVersionConstraint:
     constraint, and returns the full tag name of the highest matching version.
     """
 
-    @pytest.mark.xfail(
-        reason="awaiting implementation in E1-F2-S1-T2", strict=True
-    )
     @pytest.mark.parametrize("constraint,tags,expected", _RESOLVE_CASES)
     def test_spec_5_5_resolve_constraint(self, constraint, tags, expected):
         """Version constraint resolves to the highest matching tag.
@@ -173,9 +164,6 @@ class TestResolveVersionConstraint:
             f"{constraint} should resolve to '{expected}', got '{result}'"
         )
 
-    @pytest.mark.xfail(
-        reason="awaiting implementation in E1-F2-S1-T2", strict=True
-    )
     def test_spec_5_5_resolve_no_match_raises_error(self):
         """No matching tags raises ManifestInvalidRevisionError.
 
