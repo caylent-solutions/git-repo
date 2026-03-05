@@ -113,5 +113,32 @@
         "wildcard_constraint_revision": "refs/tags/dev/python/quality-agent/*",
         "wildcard_resolved_tag": "refs/tags/dev/python/quality-agent/1.3.0",
         "wildcard_resolved_commit_id": "deadbeef98765432"
+    },
+    "integration": {
+        "available_tags": [
+            "refs/tags/dev/python/quality-agent/1.0.0",
+            "refs/tags/dev/python/quality-agent/1.2.0",
+            "refs/tags/dev/python/quality-agent/1.2.3",
+            "refs/tags/dev/python/quality-agent/1.2.7",
+            "refs/tags/dev/python/quality-agent/1.3.0",
+            "refs/tags/dev/python/quality-agent/2.0.0",
+            "refs/tags/dev/python/quality-agent/2.1.0",
+            "refs/tags/dev/python/quality-agent/3.0.0"
+        ],
+        "compatible_release": {
+            "revision": "refs/tags/dev/python/quality-agent/~=1.2.0",
+            "expected_tag": "refs/tags/dev/python/quality-agent/1.2.7",
+            "expected_commit": "commit_compatible_release"
+        },
+        "wildcard": {
+            "revision": "refs/tags/dev/python/quality-agent/*",
+            "expected_tag": "refs/tags/dev/python/quality-agent/3.0.0",
+            "expected_commit": "commit_wildcard"
+        },
+        "range": {
+            "revision": "refs/tags/dev/python/quality-agent/>=1.0.0,<2.0.0",
+            "expected_tag": "refs/tags/dev/python/quality-agent/1.3.0",
+            "expected_commit": "commit_range"
+        }
     }
 }
