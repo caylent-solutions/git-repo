@@ -355,6 +355,106 @@ class LinkFile(CopyLinkTestCase):
         )
 
 
+class LinkFileAbsoluteDestTests(CopyLinkTestCase):
+    """Tests for _LinkFile._Link() with absolute dest paths.
+
+    Spec reference: Section 17.1 — Absolute Linkfile Dest.
+
+    When dest is an absolute path, _Link() should:
+    - Create parent directories at the absolute path
+    - Create the symlink at the exact absolute path
+    - Not use _SafeExpandPath for the dest
+
+    When dest is relative, existing behavior is unchanged.
+    """
+
+    def LinkFile(self, src, dest):
+        return project._LinkFile(self.worktree, src, self.topdir, dest)
+
+    @unittest.expectedFailure  # RED: absolute dest not implemented in _Link()
+    def test_spec_17_1_link_absolute_dest_creates_parents(self):
+        """_Link() creates parent directories for absolute dest.
+
+        Given: A _LinkFile with absolute dest in a non-existent dir tree.
+        When: _Link() is called.
+        Then: Parent directories are created.
+        Spec: Section 17.1 — absolute dest creates parents.
+        """
+        src = os.path.join(self.worktree, "plugin.txt")
+        self.touch(src)
+        abs_dest = os.path.join(self.tempdir, "abs-out", "deep", "link")
+        lf = self.LinkFile("plugin.txt", abs_dest)
+        lf._Link()
+        parent_dir = os.path.dirname(abs_dest)
+        self.assertTrue(
+            os.path.isdir(parent_dir),
+            f"parent dir '{parent_dir}' should exist",
+        )
+
+    @unittest.expectedFailure  # RED: absolute dest not implemented in _Link()
+    def test_spec_17_1_link_absolute_dest_creates_symlink(self):
+        """_Link() creates symlink at the exact absolute dest path.
+
+        Given: A _LinkFile with absolute dest.
+        When: _Link() is called.
+        Then: Symlink exists at the absolute dest path pointing to src.
+        Spec: Section 17.1 — absolute dest creates symlink.
+        """
+        src = os.path.join(self.worktree, "plugin.txt")
+        self.touch(src)
+        abs_dest = os.path.join(self.tempdir, "abs-out", "link")
+        lf = self.LinkFile("plugin.txt", abs_dest)
+        lf._Link()
+        self.assertTrue(
+            os.path.islink(abs_dest),
+            f"symlink should exist at '{abs_dest}'",
+        )
+        self.assertTrue(
+            os.path.exists(abs_dest),
+            f"symlink target should be resolvable at '{abs_dest}'",
+        )
+
+    def test_spec_17_1_link_relative_dest_uses_safe_expand(self):
+        """_Link() uses _SafeExpandPath for relative dest (existing behavior).
+
+        Given: A _LinkFile with relative dest.
+        When: _Link() is called.
+        Then: Symlink is created under topdir via _SafeExpandPath.
+        Spec: Section 17.1 — relative dest backward compatibility.
+        """
+        src = os.path.join(self.worktree, "foo.txt")
+        self.touch(src)
+        lf = self.LinkFile("foo.txt", "relative-link")
+        lf._Link()
+        expected = os.path.join(self.topdir, "relative-link")
+        self.assertExists(expected)
+        self.assertTrue(
+            os.path.islink(expected),
+            f"relative dest should create symlink at '{expected}'",
+        )
+
+    @unittest.expectedFailure  # RED: absolute dest not implemented in _Link()
+    def test_spec_17_1_link_absolute_dest_existing_parent_ok(self):
+        """_Link() works when absolute dest parent directory already exists.
+
+        Given: A _LinkFile with absolute dest in an existing directory.
+        When: _Link() is called.
+        Then: No error; symlink is created.
+        Spec: Section 17.1 — existing parent dir no-error.
+        """
+        src = os.path.join(self.worktree, "plugin.txt")
+        self.touch(src)
+        abs_dir = os.path.join(self.tempdir, "existing-dir")
+        os.makedirs(abs_dir)
+        abs_dest = os.path.join(abs_dir, "link")
+        lf = self.LinkFile("plugin.txt", abs_dest)
+        lf._Link()
+        self.assertTrue(
+            os.path.islink(abs_dest),
+            f"symlink should exist at '{abs_dest}'",
+        )
+
+
 class MigrateWorkTreeTests(unittest.TestCase):
     """Check _MigrateOldWorkTreeGitDir handling."""
 
