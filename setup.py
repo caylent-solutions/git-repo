@@ -58,6 +58,7 @@ setuptools.setup(
         "Topic :: Software Development :: Version Control :: Git",
     ],
     python_requires=">=3.6",
+    install_requires=["packaging"],
     packages=["subcmds"],
     scripts=["repo"],
 )
