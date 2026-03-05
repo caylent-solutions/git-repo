@@ -916,3 +916,39 @@ class InterleavedSyncTest(unittest.TestCase):
         self.assertTrue(result.checkout_success)
         project.Sync_NetworkHalf.assert_called_once()
         project.Sync_LocalHalf.assert_not_called()
+
+
+class PreciousObjectsSharedStoreVerification(unittest.TestCase):
+    """Verification tests for preciousObjects with shared object stores.
+
+    Spec reference: Section 17.3 — Existing behaviors to preserve.
+    When multiple projects share the same repo name, preciousObjects must be
+    enabled to prevent git gc from discarding objects needed by other checkouts.
+    """
+
+    def setUp(self):
+        """Common setup."""
+        self.cmd = sync.Sync()
+        self.opt = mock.Mock(spec_set=["this_manifest_only"])
+        self.opt.this_manifest_only = False
+
+    def test_spec_17_3_precious_objects_shared_store(self):
+        """Verify preciousObjects enabled for shared object stores (spec 17.3).
+
+        When two projects share the same repo name but have different paths,
+        they share an object store. preciousObjects must be True so git gc
+        does not prune objects needed by the other checkout.
+        """
+        project_a = mock.MagicMock(use_git_worktrees=False, UseAlternates=False)
+        project_b = mock.MagicMock(use_git_worktrees=False, UseAlternates=False)
+        project_a.manifest.GetProjectsWithName.return_value = [
+            project_a,
+            project_b,
+        ]
+
+        result = self.cmd._GetPreciousObjectsState(project_a, self.opt)
+
+        self.assertTrue(
+            result,
+            "preciousObjects must be True when projects share an object store",
+        )
