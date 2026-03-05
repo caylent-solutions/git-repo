@@ -235,3 +235,54 @@ class EnvsubstCommand(unittest.TestCase):
                 mocked_file().write.assert_called_once_with(
                     expected_file_content
                 )
+
+
+class EnvsubstVarSubstitutionVerification(unittest.TestCase):
+    """Verification tests for envsubst ${VAR} substitution in manifests.
+
+    Spec reference: Section 17.3 — Existing behaviors to preserve.
+    The envsubst command must resolve ${VAR} placeholders in manifest XML
+    attribute values using OS environment variables.
+    """
+
+    def setUp(self):
+        """Common setup."""
+        self.cmd = envsubst.Envsubst()
+
+    def test_spec_17_3_envsubst_var_substitution(self):
+        """Verify envsubst resolves ${VAR} in manifest attributes (spec 17.3).
+
+        When a manifest XML contains ${PLACEHOLDER} references in attribute
+        values, search_replace_placeholders must substitute them with the
+        corresponding environment variable values.
+        """
+        xml_input = (
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            "<manifest>\n"
+            '  <remote name="origin" fetch="${TEST_FETCH_URL}" '
+            'revision="${TEST_REVISION}"/>\n'
+            "</manifest>\n"
+        )
+        from xml.dom import minidom
+
+        doc = minidom.parseString(xml_input)
+
+        env_values = {
+            "${TEST_FETCH_URL}": "https://example.com/repos",
+            "${TEST_REVISION}": "refs/heads/main",
+        }
+        self.cmd.resolve_variable = lambda v: env_values.get(v, v)
+
+        self.cmd.search_replace_placeholders(doc)
+
+        remote = doc.getElementsByTagName("remote")[0]
+        self.assertEqual(
+            remote.getAttribute("fetch"),
+            "https://example.com/repos",
+            "fetch attribute must have ${TEST_FETCH_URL} resolved",
+        )
+        self.assertEqual(
+            remote.getAttribute("revision"),
+            "refs/heads/main",
+            "revision attribute must have ${TEST_REVISION} resolved",
+        )
