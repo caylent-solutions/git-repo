@@ -463,6 +463,25 @@ Parent directories of "dest" will be automatically created if missing.
 The symlink target may be a file or directory, but it may not point outside
 of the repo client.
 
+#### Absolute dest paths
+
+Unlike `copyfile`, `linkfile` permits absolute paths in the `dest` attribute.
+This is intended for use with `repo envsubst`, where an environment variable
+expands to an absolute filesystem path at sync time.  For example:
+
+    <linkfile src="config/settings.yml"
+              dest="${CLAUDE_MARKETPLACES_DIR}/settings.yml" />
+
+After `repo envsubst` resolves `${CLAUDE_MARKETPLACES_DIR}`, the resulting
+absolute path is used directly.  Parent directories are created automatically.
+
+Absolute dest paths are still validated: path components such as `..`, `.git`,
+and other unsafe patterns are rejected.  However, the path is not restricted
+to the repo client tree.
+
+Note: `copyfile` dest remains relative-only.  Absolute dest paths are
+supported exclusively by `linkfile`.
+
 ### Element remove-project
 
 Deletes a project from the internal manifest table, possibly
