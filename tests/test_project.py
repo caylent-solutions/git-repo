@@ -465,6 +465,82 @@ class LinkFileAbsoluteDestTests(CopyLinkTestCase):
         lf = self.LinkFile("plugin.txt", abs_dest)
         self.assertRaises(error.ManifestInvalidPathError, lf._Link)
 
+    def test_spec_17_1_link_abs_dest_replaces_existing_symlink(self):
+        """_Link() replaces an existing symlink at the absolute dest.
+
+        Given: An existing symlink at the absolute dest path.
+        When: _Link() is called with a different source.
+        Then: The old symlink is replaced and points to the new source.
+        Spec: Section 17.1 — existing symlink replacement.
+        """
+        src_old = os.path.join(self.worktree, "old.txt")
+        src_new = os.path.join(self.worktree, "new.txt")
+        self.touch(src_old)
+        self.touch(src_new)
+        abs_dest = os.path.join(self.tempdir, "abs-out", "link")
+        # Create initial symlink via _Link with old source.
+        lf_old = self.LinkFile("old.txt", abs_dest)
+        lf_old._Link()
+        self.assertTrue(os.path.islink(abs_dest))
+        # Replace with new source.
+        lf_new = self.LinkFile("new.txt", abs_dest)
+        lf_new._Link()
+        self.assertTrue(
+            os.path.islink(abs_dest),
+            f"symlink should still exist at '{abs_dest}'",
+        )
+        target = os.readlink(abs_dest)
+        resolved = os.path.join(os.path.dirname(abs_dest), target)
+        self.assertTrue(
+            os.path.samefile(resolved, src_new),
+            f"symlink should resolve to new source, got '{resolved}'",
+        )
+
+    def test_spec_17_1_link_abs_dest_deeply_nested_parents(self):
+        """_Link() creates deeply nested parent directories for absolute dest.
+
+        Given: An absolute dest with many levels of non-existent directories.
+        When: _Link() is called.
+        Then: All intermediate directories are created and symlink exists.
+        Spec: Section 17.1 — deeply nested directory creation.
+        """
+        src = os.path.join(self.worktree, "deep.txt")
+        self.touch(src)
+        abs_dest = os.path.join(
+            self.tempdir, "a", "b", "c", "d", "e", "f", "link"
+        )
+        lf = self.LinkFile("deep.txt", abs_dest)
+        lf._Link()
+        self.assertTrue(
+            os.path.isdir(os.path.dirname(abs_dest)),
+            "all intermediate parent directories should be created",
+        )
+        self.assertTrue(
+            os.path.islink(abs_dest),
+            f"symlink should exist at deeply nested path '{abs_dest}'",
+        )
+
+    def test_spec_17_1_link_abs_dest_trailing_slash(self):
+        """_Link() handles absolute dest with trailing slash gracefully.
+
+        Given: An absolute dest path ending with os.sep.
+        When: _Link() is called.
+        Then: The trailing slash is normalized and the symlink is created.
+        Spec: Section 17.1 — trailing slash edge case.
+        """
+        src = os.path.join(self.worktree, "trail.txt")
+        self.touch(src)
+        # normpath strips trailing slash, so the link is created at the
+        # normalized path.
+        raw_dest = os.path.join(self.tempdir, "trail-out", "link") + os.sep
+        normalized = os.path.normpath(raw_dest)
+        lf = self.LinkFile("trail.txt", raw_dest)
+        lf._Link()
+        self.assertTrue(
+            os.path.islink(normalized),
+            f"symlink should exist at normalized path '{normalized}'",
+        )
+
 
 class MigrateWorkTreeTests(unittest.TestCase):
     """Check _MigrateOldWorkTreeGitDir handling."""
