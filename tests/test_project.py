@@ -786,6 +786,64 @@ class TestGetRevisionIdVersionConstraints:
                         f"tag '{tag}' should be in the passed tag list"
                     )
 
+    def test_spec_17_2_get_revision_id_no_refs_raises_error(self):
+        """GetRevisionId raises error when all_refs is None for constraint.
+
+        Given: A project with a constraint revisionExpr.
+        When: GetRevisionId() is called with all_refs=None.
+        Then: ManifestInvalidRevisionError is raised immediately.
+        Spec: Section 17.2 — fail-fast on no refs available.
+        """
+        from unittest.mock import MagicMock
+
+        proj = MagicMock(spec=project.Project)
+        proj.revisionId = None
+        proj.revisionExpr = _GRI_DATA["constraint_revision"]
+        proj.name = "test-project"
+
+        with pytest.raises(error.ManifestInvalidRevisionError):
+            project.Project.GetRevisionId(proj, None)
+
+    def test_spec_17_2_get_revision_id_wildcard_constraint(self):
+        """GetRevisionId resolves wildcard constraint to latest tag.
+
+        Given: A project with revisionExpr containing wildcard (*).
+        When: GetRevisionId() is called with all_refs containing tags.
+        Then: The latest tag's commit ID is returned.
+        Spec: Section 17.2 — wildcard constraint with refs/tags/ prefix.
+        """
+        import version_constraints
+        from unittest.mock import MagicMock, patch
+
+        proj = MagicMock(spec=project.Project)
+        proj.revisionId = None
+        proj.revisionExpr = _GRI_DATA["wildcard_constraint_revision"]
+        proj.name = "test-project"
+
+        resolved_tag = _GRI_DATA["wildcard_resolved_tag"]
+        expected_commit = _GRI_DATA["wildcard_resolved_commit_id"]
+
+        all_refs = {
+            tag: f"commit_{i}" for i, tag in enumerate(_GRI_DATA["remote_tags"])
+        }
+        all_refs[resolved_tag] = expected_commit
+
+        with patch.object(
+            version_constraints,
+            "is_version_constraint",
+            return_value=True,
+        ):
+            with patch.object(
+                version_constraints,
+                "resolve_version_constraint",
+                return_value=resolved_tag,
+            ):
+                result = project.Project.GetRevisionId(proj, all_refs)
+                assert result == expected_commit, (
+                    f"wildcard should resolve to '{expected_commit}', "
+                    f"got '{result}'"
+                )
+
 
 class MigrateWorkTreeTests(unittest.TestCase):
     """Check _MigrateOldWorkTreeGitDir handling."""

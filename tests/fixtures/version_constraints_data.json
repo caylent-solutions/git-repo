@@ -109,6 +109,9 @@
             "refs/tags/dev/python/quality-agent/1.2.3",
             "refs/tags/dev/python/quality-agent/1.2.7",
             "refs/tags/dev/python/quality-agent/1.3.0"
-        ]
+        ],
+        "wildcard_constraint_revision": "refs/tags/dev/python/quality-agent/*",
+        "wildcard_resolved_tag": "refs/tags/dev/python/quality-agent/1.3.0",
+        "wildcard_resolved_commit_id": "deadbeef98765432"
     }
 }
