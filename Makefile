@@ -7,13 +7,15 @@ help: ## Show available targets and their descriptions
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 lint: ## Run all linters (ruff, markdownlint, yamllint)
-	@echo 'ERROR: lint target not yet configured (see E0-F1-S1-T2)' >&2 && exit 1
+	ruff check .
+	markdownlint '**/*.md'
+	yamllint .
 
 format: ## Auto-fix formatting issues (ruff format)
-	@echo 'ERROR: format target not yet configured (see E0-F1-S1-T2)' >&2 && exit 1
+	ruff format .
 
 format-check: ## Verify formatting without modifying files (CI-safe)
-	@echo 'ERROR: format-check target not yet configured (see E0-F1-S1-T2)' >&2 && exit 1
+	ruff format --check .
 
 check: lint format-check ## Run all checks: lint + format verification (read-only, CI-safe)
 
