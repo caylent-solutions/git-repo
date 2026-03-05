@@ -23,6 +23,7 @@ import xml.dom.minidom
 
 import error
 import manifest_xml
+import project
 
 
 # Invalid paths that we don't want in the filesystem.
@@ -1625,3 +1626,107 @@ class CheckLocalPathAbsOkEdgeCaseTests(unittest.TestCase):
                     msg,
                     f"normalized bad path '{path}' should be rejected",
                 )
+
+
+class EnvsubstAbsoluteLinkfileIntegrationTest(unittest.TestCase):
+    """Integration test: envsubst + manifest validation + absolute linkfile.
+
+    Spec reference: Section 17.1 — End-to-end flow.
+
+    Exercises the complete pipeline:
+    1. Environment variable resolution (os.path.expandvars, same as envsubst)
+    2. Manifest path validation (_ValidateFilePaths with abs_ok=True)
+    3. Symlink creation (_LinkFile._Link with absolute dest)
+
+    This validates that the three components (envsubst, manifest_xml,
+    project._LinkFile) work together when a linkfile dest contains an
+    environment variable that expands to an absolute path.
+    """
+
+    ENV_VAR_NAME = "CLAUDE_MARKETPLACES_DIR"
+
+    def setUp(self):
+        self.tempdirobj = tempfile.TemporaryDirectory(prefix="repo_tests")
+        self.tempdir = self.tempdirobj.name
+        # Simulated worktree and topdir for _LinkFile.
+        self.worktree = os.path.join(self.tempdir, "git-project")
+        self.topdir = os.path.join(self.tempdir, "checkout")
+        os.makedirs(self.worktree)
+        os.makedirs(self.topdir)
+        # Absolute dest directory (simulates CLAUDE_MARKETPLACES_DIR).
+        self.marketplace_dir = os.path.join(self.tempdir, "marketplaces")
+        # Set the env var for expandvars resolution.
+        self.orig_env = os.environ.get(self.ENV_VAR_NAME)
+        os.environ[self.ENV_VAR_NAME] = self.marketplace_dir
+
+    def tearDown(self):
+        # Restore original env state.
+        if self.orig_env is None:
+            os.environ.pop(self.ENV_VAR_NAME, None)
+        else:
+            os.environ[self.ENV_VAR_NAME] = self.orig_env
+        self.tempdirobj.cleanup()
+
+    def _create_source_file(self, name):
+        """Create a source file in the simulated worktree."""
+        path = os.path.join(self.worktree, name)
+        with open(path, "w") as f:
+            f.write(name)
+        return path
+
+    def test_spec_17_1_integration_envsubst_absolute_linkfile_e2e(self):
+        """End-to-end: envsubst resolves variable, manifest validates, symlink created.
+
+        Given: CLAUDE_MARKETPLACES_DIR is set to a temporary directory.
+        And: A linkfile dest attribute contains ${CLAUDE_MARKETPLACES_DIR}/mkt.
+        When: The variable is resolved via os.path.expandvars (envsubst).
+        And: The expanded path passes _ValidateFilePaths as a linkfile dest.
+        And: _LinkFile._Link() creates the symlink at the absolute path.
+        Then: The symlink exists at the resolved absolute path.
+        And: Parent directories were created.
+        Spec: Section 17.1 — envsubst + absolute linkfile integration.
+        """
+        src_name = "settings.yml"
+        self._create_source_file(src_name)
+
+        # Step 1: Simulate envsubst — resolve ${CLAUDE_MARKETPLACES_DIR}.
+        raw_dest = "${%s}/test-marketplace" % self.ENV_VAR_NAME
+        resolved_dest = os.path.expandvars(raw_dest)
+        self.assertTrue(
+            os.path.isabs(resolved_dest),
+            f"resolved dest '{resolved_dest}' should be absolute",
+        )
+        self.assertNotIn(
+            "$",
+            resolved_dest,
+            "all variables should be resolved",
+        )
+
+        # Step 2: Validate through manifest parsing layer.
+        # This calls _CheckLocalPath with abs_ok=True for linkfile.
+        manifest_xml.XmlManifest._ValidateFilePaths(
+            "linkfile", src_name, resolved_dest
+        )
+
+        # Step 3: Create the symlink via _LinkFile._Link().
+        lf = project._LinkFile(
+            self.worktree, src_name, self.topdir, resolved_dest
+        )
+        lf._Link()
+
+        # Step 4: Verify symlink exists at the resolved absolute path.
+        self.assertTrue(
+            os.path.islink(resolved_dest),
+            f"symlink should exist at '{resolved_dest}'",
+        )
+        self.assertTrue(
+            os.path.exists(resolved_dest),
+            f"symlink target should be resolvable at '{resolved_dest}'",
+        )
+
+        # Step 5: Verify parent directories were created.
+        parent_dir = os.path.dirname(resolved_dest)
+        self.assertTrue(
+            os.path.isdir(parent_dir),
+            f"parent dir '{parent_dir}' should exist",
+        )
