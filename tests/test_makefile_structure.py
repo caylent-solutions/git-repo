@@ -187,7 +187,7 @@ def test_placeholder_targets_fail_fast():
     Then: It exits with non-zero code and prints an error to stderr
     Spec: Plan: Fail-fast principle
     """
-    placeholder_targets = ["lint", "format", "format-check", "test", "test-unit", "test-functional"]
+    placeholder_targets = ["test", "test-unit", "test-functional"]
     for target in placeholder_targets:
         result = subprocess.run(
             ["make", "-C", REPO_ROOT, target],
