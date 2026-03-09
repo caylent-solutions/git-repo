@@ -18,3 +18,5 @@ shell.env
 devcontainer-environment-variables.json
 .devcontainer/aws-profile-map.json
 .coverage
+
+.devcontainer/ssh-private-key
