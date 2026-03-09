@@ -68,20 +68,20 @@ prepared for people asking questions.
 
 The process of actually adding a new key is quite simple.
 
-1.  Add the public half of the key to `MAINTAINER_KEYS`.
-2.  Increment `KEYRING_VERSION` so repo knows it needs to update.
-3.  Wait a long time after that version is in a release (~months) before trying
-    to create a new release using those new keys.
+1. Add the public half of the key to `MAINTAINER_KEYS`.
+2. Increment `KEYRING_VERSION` so repo knows it needs to update.
+3. Wait a long time after that version is in a release (~months) before trying
+   to create a new release using those new keys.
 
 ## Self update algorithm
 
 When creating a new repo checkout with `repo init`, there are a few options that
 control how repo finds updates:
 
-*   `--repo-url`: This tells repo where to clone the full repo project itself.
-    It defaults to the official project (`REPO_URL` in the launcher script).
-*   `--repo-rev`: This tells repo which branch to use for the full project.
-    It defaults to the `stable` branch (`REPO_REV` in the launcher script).
+* `--repo-url`: This tells repo where to clone the full repo project itself.
+  It defaults to the official project (`REPO_URL` in the launcher script).
+* `--repo-rev`: This tells repo which branch to use for the full project.
+  It defaults to the `stable` branch (`REPO_REV` in the launcher script).
 
 Whenever `repo sync` is run, repo will, once every 24 hours, see if an update
 is available.
@@ -145,15 +145,15 @@ Note that only official maintainers of repo will have access as it describes
 internal processes for accessing the restricted keys.
 ***
 
-```sh
+```bash
 # Pick the new version.
-$ t=v2.30
+t=v2.30
 
 # Create a new signed tag with the current HEAD.
-$ ./release/sign-tag.py $t
+./release/sign-tag.py $t
 
 # Verify the signed tag.
-$ git show $t
+git show $t
 ```
 
 ### Push the new release
@@ -164,18 +164,18 @@ Once you're ready to make the release available to everyone, push it to the
 Make sure you never push the tag itself to the stable branch!
 Only push the commit -- note the use of `^0` below.
 
-```sh
-$ git push https://gerrit-review.googlesource.com/git-repo $t
-$ git push https://gerrit-review.googlesource.com/git-repo $t^0:stable
+```bash
+git push https://gerrit-review.googlesource.com/git-repo $t
+git push https://gerrit-review.googlesource.com/git-repo $t^0:stable
 ```
 
 If something goes horribly wrong, you can force push the previous version to the
 `stable` branch and people should automatically recover.
 Again, make sure you never push the tag itself!
 
-```sh
-$ oldrev="whatever-old-commit"
-$ git push https://gerrit-review.googlesource.com/git-repo $oldrev:stable --force
+```bash
+oldrev="whatever-old-commit"
+git push https://gerrit-review.googlesource.com/git-repo $oldrev:stable --force
 ```
 
 ### Announce the release
@@ -186,12 +186,15 @@ Here is an [example announcement].
 
 You can create a short changelog using the command:
 
-```sh
-# If you haven't pushed to the stable branch yet, you can use origin/stable.
-# If you have pushed, change origin/stable to the previous release tag.
-# This assumes "main" is the current tagged release.  If it's newer, change it
-# to the current release tag too.
-$ git log --format="%h (%aN) %s" --no-merges origin/stable..main
+```bash
+# If you haven't pushed to the stable branch yet,
+# you can use origin/stable.
+# If you have pushed, change origin/stable to the
+# previous release tag.
+# This assumes "main" is the current tagged release.
+# If it's newer, change it to the current release
+# tag too.
+git log --format="%h (%aN) %s" --no-merges origin/stable..main
 ```
 
 ## Project References
@@ -218,7 +221,7 @@ Things in italics are things we used to care about but probably don't anymore.
 | Mar 2010 |              |              |                 | 5.4          |
 | Apr 2010 |              |              |                 | 5.5          | 10.10 Maverick |
 | Apr 2010 | *Apr 2015*   |              |                 |              | *10.04 Lucid*        | 1.7.0.4  | 2.6.5 3.1.2  | 5.3 |
-| Jul 2010 | *Dec 2019*   |              | *2.7.0*         |              | 11.04 Natty - *<current>* |
+| Jul 2010 | *Dec 2019*   |              | *2.7.0*         |              | 11.04 Natty - *current* |
 | Aug 2010 |              |              |                 | 5.6          |
 | Oct 2010 |              |              |                 |              | 10.10 Maverick       | 1.7.1    | 2.6.6 3.1.3  | 5.5 |
 | Jan 2011 |              |              |                 | 5.7          |
@@ -343,7 +346,6 @@ Things in italics are things we used to care about but probably don't anymore.
 | Mar 2024 |              |              |                 | 9.7          |
 | Oct 2024 |              |              | 3.13.0          |
 | **Date** |   **EOL**    | **[Git][rel-g]** | **[Python][rel-p]** | **[SSH][rel-o]** | **[Ubuntu][rel-u] / [Debian][rel-d]** | **Git** | **Python** | **SSH** |
-
 
 [contact]: ../README.md#contact
 [rel-d]: https://en.wikipedia.org/wiki/Debian_version_history

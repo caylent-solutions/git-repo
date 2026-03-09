@@ -2,61 +2,81 @@
 
 ## Status: Design Specification (Agent-Ready)
 
-This specification is for **Caylent**. It defines the architecture for distributing
+This specification is for **Caylent**. It defines the architecture for
+distributing
 Claude Code plugins via RPM infrastructure within the Caylent organization. An
-implementing agent should be able to build the complete system from this document alone.
+implementing agent should be able to build the complete system from this
+document alone.
 
 ---
 
 ## 1. Problem Statement
 
-Claude Code plugins are distributed in a monorepo containing many marketplaces (sub-repos).
+Claude Code plugins are distributed in a monorepo containing many marketplaces
+(sub-repos).
 Each marketplace directory contains 1 to many plugins.
 
 Projects need to:
 
-1. Declare which marketplaces they require (from 1 to N of the available marketplaces)
+1. Declare which marketplaces they require (from 1 to N of the available
+   marketplaces)
 2. Pin each marketplace to an independent semantic version or version constraint
 3. Sync only the declared marketplaces into a well-known location
 4. Automatically register each synced marketplace and install its plugins
 5. Avoid namespace collisions across all layers of the system
 6. Separate plugin marketplace concerns from build-tooling package concerns
 
-The existing RPM (Repo Package Manager) infrastructure (the `repo` tool, manifest XML, and
-`.rpmenv` configuration) must be leveraged as the delivery mechanism. No new tooling is
+The existing RPM (Repo Package Manager) infrastructure (the `repo` tool,
+manifest XML, and
+`.rpmenv` configuration) must be leveraged as the delivery mechanism. No new
+tooling is
 introduced. The `.packages/` naming convention is extended from `<repo-name>` to
-`<repo-name>-<flattened-marketplace-path>` to support multiple checkouts of the same
+`<repo-name>-<flattened-marketplace-path>` to support multiple checkouts of the
+same
 monorepo at different versions.
 
-**Repository visibility:** The plugin monorepo (`rpm-claude-marketplaces`) and the
+**Repository visibility:** The plugin monorepo (`rpm-claude-marketplaces`) and
+the
 top-level manifest repo (`caylent-private-rpm`) MUST be created as **private**
 repositories under the `caylent-solutions` GitHub organization. All RPM package
-repositories (e.g., `rpm-python-uv`) MUST also be private. No RPM-managed repository
+repositories (e.g., `rpm-python-uv`) MUST also be private. No RPM-managed
+repository
 should be public.
 
-**RPM naming convention:** Every git repository synced by RPM MUST be prefixed with
-`rpm-`. This includes both build-tooling packages (e.g., `rpm-python-uv`) and the
-plugin monorepo (e.g., `rpm-claude-marketplaces`). Throughout this specification, `<monorepo>`
-is a placeholder for the plugin monorepo's actual `rpm-claude-marketplaces` name. The
+**RPM naming convention:** Every git repository synced by RPM MUST be prefixed
+with
+`rpm-`. This includes both build-tooling packages (e.g., `rpm-python-uv`) and
+the
+plugin monorepo (e.g., `rpm-claude-marketplaces`). Throughout this
+specification, `<monorepo>`
+is a placeholder for the plugin monorepo's actual `rpm-claude-marketplaces`
+name. The
 hierarchy within the manifest repo follows
-`<runtime>/<build-tool>/<framework>/<architecture>`. The plugin monorepo uses a broader
-structure: `common/<domain>/<runtime>/<build-tool>/<framework>/<architecture>`, where
+`<runtime>/<build-tool>/<framework>/<architecture>`. The plugin monorepo uses a
+broader
+structure: `common/<domain>/<runtime>/<build-tool>/<framework>/<architecture>`,
+where
 all marketplaces live under `common/` and are organized by domain first. For the
-`development` domain, the hierarchy aligns with the manifest repo structure. Other
-domains (e.g., `marketing`, `legal`) are freeform. **This hierarchy is a recommendation,
+`development` domain, the hierarchy aligns with the manifest repo structure.
+Other
+domains (e.g., `marketing`, `legal`) are freeform. **This hierarchy is a
+recommendation,
 not a hard requirement.** Any directory structure under `common/` is valid.
 
 **Build package naming convention:** Build packages follow the pattern
-`rpm-<runtime>-<descriptive package name>` (e.g., `rpm-python-uv`, `rpm-node-npm`,
-`rpm-dotnet-nuget`). The descriptive name is chosen to clearly identify the package's
-purpose. It is not required to match any specific hierarchy level. If a better naming
+`rpm-<runtime>-<descriptive package name>` (e.g., `rpm-python-uv`,
+`rpm-node-npm`,
+`rpm-dotnet-nuget`). The descriptive name is chosen to clearly identify the
+package's
+purpose. It is not required to match any specific hierarchy level. If a better
+naming
 standard emerges, this convention can be updated.
 
 ---
 
 ## 2. Architecture Overview
 
-```
+```text
   MANIFEST REPO (caylent-private-rpm), the orchestrator
   Contains repo-specs/ with the <runtime>/<build-tool>/<framework>/<architecture> hierarchy
   Each leaf directory has XML manifests that reference both the plugin monorepo and build packages
@@ -183,35 +203,46 @@ There are four distinct concerns with clear separation:
 **Name:** `.claude-marketplaces`
 
 **Rationale:**
-- Lives in `$HOME` = outside the git project, shared across projects on the same machine
+- Lives in `$HOME` = outside the git project, shared across projects on the same
+  machine
 - Dot-prefixed = hidden, not part of normal user files
 - `claude` = Claude Code (the tool these marketplaces serve)
 - `marketplaces` = the exact term used by `claude plugin marketplace add`
-- Distinct from `.packages/` = clear separation of build-tooling from plugin concerns
+- Distinct from `.packages/` = clear separation of build-tooling from plugin
+  concerns
 
 **Properties:**
-- MUST be located at `$HOME/.claude-marketplaces/` (the user's home directory root)
+- MUST be located at `$HOME/.claude-marketplaces/` (the user's home directory
+  root)
 - Lives outside the git project checkout, does NOT need to be gitignored
-- MUST contain only symlinks created by `<linkfile>` directives, never real directories
+- MUST contain only symlinks created by `<linkfile>` directives, never real
+  directories
 - MUST NOT contain any files directly, only subdirectories (symlinked)
 - Symlinks point into `.packages/` of the project that created them
 
-**Invariant:** Every entry in `$HOME/.claude-marketplaces/` is a symlink pointing to a
-marketplace subdirectory within a monorepo checkout under a project's `.packages/`.
+**Invariant:** Every entry in `$HOME/.claude-marketplaces/` is a symlink
+pointing to a
+marketplace subdirectory within a monorepo checkout under a project's
+`.packages/`.
 
 ### 3.2 Subdirectory Naming: `<repo-name>-<marketplace-name>`
 
 Each subdirectory within `$HOME/.claude-marketplaces/` follows the convention:
 
-```
-$HOME/.claude-marketplaces/<monorepo-repo-name>-<flattened-marketplace-path>/
+```text
+~/.claude-marketplaces/<monorepo-repo-name>-<flattened-marketplace-path>/
 ```
 
-The **marketplace path** is the marketplace directory's location within the monorepo hierarchy
-(e.g., `common/development/python/uv/django/django-helpers`). The **flattened marketplace path**
-is computed by the path flattening algorithm defined in Section 4.6, which strips configured
-leading path components (from `config-repo.json`) and joins the remaining segments with dashes
-(e.g., `python-uv-django-django-helpers`). Each marketplace directory contains **1 to many
+The **marketplace path** is the marketplace directory's location within the
+monorepo hierarchy
+(e.g., `common/development/python/uv/django/django-helpers`). The **flattened
+marketplace path**
+is computed by the path flattening algorithm defined in Section 4.6, which
+strips configured
+leading path components (from `config-repo.json`) and joins the remaining
+segments with dashes
+(e.g., `python-uv-django-django-helpers`). Each marketplace directory contains
+**1 to many
 plugins**.
 
 **Examples (using placeholder names):**
@@ -223,18 +254,25 @@ plugins**.
 | `rpm-claude-marketplaces` | `common/development/python/uv/django/django-helpers` | `python-uv-django-django-helpers` | `$HOME/.claude-marketplaces/rpm-claude-marketplaces-python-uv-django-django-helpers/` |
 | `rpm-claude-marketplaces` | `common/development/node/npm/quality-agent` | `node-npm-quality-agent` | `$HOME/.claude-marketplaces/rpm-claude-marketplaces-node-npm-quality-agent/` |
 
-**Uniqueness guarantee:** The combination of `<repo-name>` + `-` + `<flattened-marketplace-path>`
+**Uniqueness guarantee:** The combination of `<repo-name>` + `-` +
+`<flattened-marketplace-path>`
 is unique because:
-- A single monorepo cannot have duplicate directory paths: the filesystem enforces
+- A single monorepo cannot have duplicate directory paths: the filesystem
+  enforces
   that every path within the repository is unique
 - The marketplace hierarchy path is therefore unique within its monorepo
-- The flattening algorithm (Section 4.6) is deterministic, and CI validates that all
-  flattened names are unique across the entire monorepo (see `config-repo.json` in
+- The flattening algorithm (Section 4.6) is deterministic, and CI validates that
+  all
+    flattened names are unique across the entire monorepo (see
+  `config-repo.json` in
   Section 4.5)
 - At the Claude Code CLI level, plugins use `plugin@marketplace` composite keys
-  (stored in `~/.claude/plugins/installed_plugins.json`), so two plugins with the same
-  name from different marketplaces are distinct entries, no collision is possible
-- Skills are additionally namespaced: a skill `review` in plugin `code-quality` becomes
+    (stored in `~/.claude/plugins/installed_plugins.json`), so two plugins with
+  the same
+    name from different marketplaces are distinct entries, no collision is
+  possible
+- Skills are additionally namespaced: a skill `review` in plugin `code-quality`
+  becomes
   `/code-quality:review`, preventing invocation conflicts across plugins
 
 ### 3.3 Monorepo Checkouts
@@ -242,12 +280,13 @@ is unique because:
 Full monorepo checkouts live in `.packages/` following the
 `<repo-name>-<flattened-marketplace-path>` convention:
 
-```
+```text
 .packages/<monorepo-repo-name>-<flattened-marketplace-path>/
 ```
 
 **Examples (using `rpm-claude-marketplaces` as the monorepo name):**
-```
+
+```text
 .packages/rpm-claude-marketplaces-sdlc-tools/                      ← checkout @ refs/tags/sdlc-tools/1.0.0
 .packages/rpm-claude-marketplaces-python-uv-quality-agent/         ← checkout @ refs/tags/development/python/uv/quality-agent/1.0.0
 .packages/rpm-claude-marketplaces-python-uv-django-django-helpers/ ← checkout @ refs/tags/development/python/uv/django/django-helpers/1.0.0
@@ -258,7 +297,8 @@ Full monorepo checkouts live in `.packages/` following the
 - Contain the complete monorepo working tree at the tagged revision
 - Each checkout is at a different tag (per-marketplace version)
 - Git objects are shared across all checkouts of the same monorepo
-- The install script MUST NOT scan these directories, only `$HOME/.claude-marketplaces/`
+- The install script MUST NOT scan these directories, only
+  `$HOME/.claude-marketplaces/`
 
 ### 3.4 Complete Directory Layout Example
 
@@ -267,7 +307,7 @@ This example shows a Python/uv/Django/Frontend project that receives:
 - Python-specific marketplaces (inherited via hierarchy)
 - Python+uv+Django specific marketplaces (most specific level)
 
-```
+```text
 <project-root>/
 ├── .rpmenv                                                      ← RPM configuration (committed)
 ├── .gitignore                                                   ← ignores .packages/, .rpm/
@@ -317,33 +357,45 @@ $HOME/.claude-marketplaces/                                      ← user home (
 
 ### 4.1 Repository Layout
 
-The plugin monorepo is a single git repository. All marketplaces live under a top-level
+The plugin monorepo is a single git repository. All marketplaces live under a
+top-level
 `common/` directory, organized from broad to specific:
 
-```
+```text
 common/<domain>/<runtime>/<build-tool>/<framework>/<architecture>
 ```
 
-**This hierarchy is a recommendation, not a hard requirement.** Any directory structure
-under `common/` is valid. For the `development` domain, the convention aligns with the
-RPM manifest repo hierarchy. Other domains (e.g., `marketing`, `legal`) use whatever
+**This hierarchy is a recommendation, not a hard requirement.** Any directory
+structure
+under `common/` is valid. For the `development` domain, the convention aligns
+with the
+RPM manifest repo hierarchy. Other domains (e.g., `marketing`, `legal`) use
+whatever
 structure makes sense for their content.
 
-Marketplaces (directories containing 1 to many plugins) can exist at **any level** of
-the hierarchy. **Where you place a marketplace in the hierarchy determines which projects
-automatically receive it**. Because the manifest XML uses cascading `<include>` chains
-(see Section 5.2), a project at any hierarchy position automatically inherits ALL
+Marketplaces (directories containing 1 to many plugins) can exist at **any
+level** of
+the hierarchy. **Where you place a marketplace in the hierarchy determines which
+projects
+automatically receive it**. Because the manifest XML uses cascading `<include>`
+chains
+(see Section 5.2), a project at any hierarchy position automatically inherits
+ALL
 marketplaces from its own level AND every level above it, up to `common/`.
 
 This means:
-- A marketplace directly under `common/` (e.g., `common/sdlc-tools/`) is inherited by
+- A marketplace directly under `common/` (e.g., `common/sdlc-tools/`) is
+  inherited by
   **every project** regardless of domain or technology stack
-- A marketplace under a **domain** (e.g., `common/development/python/python-commons/`)
+- A marketplace under a **domain** (e.g.,
+  `common/development/python/python-commons/`)
   is inherited by **all Python development projects**
-- A marketplace at a **deeper** level (e.g., `common/development/python/uv/django/django-helpers/`)
+- A marketplace at a **deeper** level (e.g.,
+  `common/development/python/uv/django/django-helpers/`)
   is only inherited by projects whose hierarchy path passes through that level
 
-**Place a marketplace at the broadest scope where it applies.** The higher in the tree
+**Place a marketplace at the broadest scope where it applies.** The higher in
+the tree
 you place it, the more projects automatically receive it.
 
 **Hierarchy field definitions (development domain, recommended convention):**
@@ -357,12 +409,14 @@ you place it, the more projects automatically receive it.
 | 4 | `<framework>` | Application framework | All projects using that runtime+tool+framework | `django`, `express`, `aspnet` |
 | 5 | `<architecture>` | Service architecture pattern | Only projects at that exact position | `microservice`, `frontend`, `serverless` |
 
-**Levels 2-5 are the recommended convention for the `development` domain.** Other
-domains may use fewer levels, different level names, or a completely flat structure.
+**Levels 2-5 are the recommended convention for the `development` domain.**
+Other
+domains may use fewer levels, different level names, or a completely flat
+structure.
 
 **Full monorepo layout:**
 
-```
+```text
 <monorepo>/
 │
 ├── common/                                              ← Common wrapper for all marketplaces
@@ -438,37 +492,52 @@ domains may use fewer levels, different level names, or a completely flat struct
 ```
 
 **Key observations:**
-- Intermediate hierarchy directories (e.g., `common/development/python/`, `common/development/python/uv/`, `common/development/node/npm/`)
+- Intermediate hierarchy directories (e.g., `common/development/python/`,
+  `common/development/python/uv/`, `common/development/node/npm/`)
   are NOT marketplaces; they are organizational containers
-- Only directories that contain plugin subdirectories (with `plugin.json`) are marketplaces
-- A marketplace always contains **1 to many plugins**, each in its own subdirectory
-- The hierarchy structure under `common/development/` mirrors the `repo-specs/` folder structure in the RPM manifest
+- Only directories that contain plugin subdirectories (with `plugin.json`) are
+  marketplaces
+- A marketplace always contains **1 to many plugins**, each in its own
+  subdirectory
+- The hierarchy structure under `common/development/` mirrors the `repo-specs/`
+  folder structure in the RPM manifest
   repository, enabling alignment between build packages and plugin marketplaces
-- **Where you place a marketplace determines its scope of inheritance**: all projects
-  at or below that hierarchy level automatically receive it via cascading `<include>`
+- **Where you place a marketplace determines its scope of inheritance**: all
+  projects
+    at or below that hierarchy level automatically receive it via cascading
+  `<include>`
   chains in the manifest XML (see Section 5.2)
-- Build packages follow the `rpm-<runtime>-<descriptive package name>` naming convention
-  (e.g., `rpm-python-uv` covers Python/uv build tasks), while plugin marketplaces may
+- Build packages follow the `rpm-<runtime>-<descriptive package name>` naming
+  convention
+    (e.g., `rpm-python-uv` covers Python/uv build tasks), while plugin
+  marketplaces may
   be more granular across multiple hierarchy levels
 
 ### 4.2 Marketplace Subdirectory Requirements
 
 Each marketplace subdirectory MUST:
-- Be a valid Claude Code marketplace (i.e., `claude plugin marketplace add <path>` succeeds)
+- Be a valid Claude Code marketplace (i.e., `claude plugin marketplace add
+  <path>` succeeds)
 - Contain a `.claude-plugin/marketplace.json` file (see Section 4.2.1)
-- Contain 1 to many plugins, each in its own subdirectory with a `.claude-plugin/plugin.json`
+- Contain 1 to many plugins, each in its own subdirectory with a
+  `.claude-plugin/plugin.json`
 - Be entirely self-contained (no references to files outside its own directory)
-- Reside at any level of the `common/<domain>/<runtime>/<build-tool>/<framework>/<architecture>` hierarchy
+- Reside at any level of the
+  `common/<domain>/<runtime>/<build-tool>/<framework>/<architecture>` hierarchy
 
 Each marketplace subdirectory MUST NOT:
-- Reference files from sibling marketplace directories or other hierarchy branches
+- Reference files from sibling marketplace directories or other hierarchy
+  branches
 - Depend on files at the monorepo root or at intermediate hierarchy directories
-- Contain nested marketplaces (a marketplace is a leaf in the organizational hierarchy)
+- Contain nested marketplaces (a marketplace is a leaf in the organizational
+  hierarchy)
 
 #### 4.2.1 `marketplace.json` Schema
 
-Each marketplace MUST contain `.claude-plugin/marketplace.json` at the marketplace root.
-This file is the marketplace catalog that Claude Code reads when the marketplace is
+Each marketplace MUST contain `.claude-plugin/marketplace.json` at the
+marketplace root.
+This file is the marketplace catalog that Claude Code reads when the marketplace
+is
 registered via `claude plugin marketplace add <path>`.
 
 **Required fields:**
@@ -523,7 +592,7 @@ registered via `claude plugin marketplace add <path>`.
 
 #### 4.2.2 Marketplace Directory Structure
 
-```
+```text
 <marketplace-name>/
 ├── .claude-plugin/
 │   └── marketplace.json           ← marketplace catalog (required)
@@ -544,8 +613,10 @@ registered via `claude plugin marketplace add <path>`.
 
 ### 4.3 Plugin Metadata Requirements (`plugin.json`)
 
-Each plugin MUST contain `.claude-plugin/plugin.json` at the plugin root. If omitted,
-Claude Code auto-discovers components and derives the plugin name from the directory name.
+Each plugin MUST contain `.claude-plugin/plugin.json` at the plugin root. If
+omitted,
+Claude Code auto-discovers components and derives the plugin name from the
+directory name.
 
 **Required fields:**
 
@@ -595,22 +666,28 @@ Claude Code auto-discovers components and derives the plugin name from the direc
 - `.mcp.json` for MCP servers
 - `.lsp.json` for LSP servers
 
-**Runtime variable:** Use `${CLAUDE_PLUGIN_ROOT}` in hooks and MCP server configs to
+**Runtime variable:** Use `${CLAUDE_PLUGIN_ROOT}` in hooks and MCP server
+configs to
 reference the plugin's installation directory.
 
-**Caching:** Marketplace plugins are copied to `~/.claude/plugins/cache/` when installed.
+**Caching:** Marketplace plugins are copied to `~/.claude/plugins/cache/` when
+installed.
 Plugins cannot reference files outside their own directory.
 
 ### 4.4 Semantic Tag Convention
 
 Tags follow the monorepo convention: `<marketplace-path>/<semver>`
 
-The `<marketplace-path>` is the marketplace's path relative to the `marketplace_root`
-(defined in `config-repo.json`, typically `common`). The `marketplace_root` prefix is
-stripped from tags to avoid unnecessary filesystem noise — this follows the monorepo
-community standard where tags use logical package paths, not full filesystem paths.
+The `<marketplace-path>` is the marketplace's path relative to the
+`marketplace_root`
+(defined in `config-repo.json`, typically `common`). The `marketplace_root`
+prefix is
+stripped from tags to avoid unnecessary filesystem noise — this follows the
+monorepo
+community standard where tags use logical package paths, not full filesystem
+paths.
 
-```
+```text
 sdlc-tools/1.0.0                                                                ← universal
 sdlc-tools/1.1.0
 security-review/1.0.0                                                           ← universal
@@ -627,7 +704,8 @@ development/dotnet/nuget/aspnet/aspnet-scaffolding/1.0.0                        
 ```
 
 **Rules:**
-- The tag prefix MUST match an existing marketplace directory path relative to `marketplace_root`
+- The tag prefix MUST match an existing marketplace directory path relative to
+  `marketplace_root`
 - The tag suffix MUST be a valid semantic version (MAJOR.MINOR.PATCH)
 - Tags are immutable: once pushed, never moved or deleted
 - A tag represents the release of that specific marketplace at that version
@@ -636,9 +714,12 @@ development/dotnet/nuget/aspnet/aspnet-scaffolding/1.0.0                        
 
 ### 4.5 Monorepo Configuration: `config-repo.json`
 
-The plugin monorepo MUST contain a `config-repo.json` file at the repository root. This
-file is the single source of truth for the monorepo's structural rules, including which
-directories are organizational containers versus marketplaces, and how marketplace paths
+The plugin monorepo MUST contain a `config-repo.json` file at the repository
+root. This
+file is the single source of truth for the monorepo's structural rules,
+including which
+directories are organizational containers versus marketplaces, and how
+marketplace paths
 are flattened into filesystem-safe names.
 
 ```json
@@ -667,42 +748,59 @@ are flattened into filesystem-safe names.
 
 **Reserved directory semantics:**
 
-A **reserved directory** is an organizational container that structures the monorepo
-hierarchy. It MUST NOT contain `plugin.json` files (it is not a marketplace). It MAY
-contain child directories that are either other reserved directories or marketplaces.
+A **reserved directory** is an organizational container that structures the
+monorepo
+hierarchy. It MUST NOT contain `plugin.json` files (it is not a marketplace). It
+MAY
+contain child directories that are either other reserved directories or
+marketplaces.
 
 At any level under `marketplace_root`, a directory MUST be one of:
-1. **Reserved** (listed in `reserved_directories`) — organizational container, can have children
-2. **Not reserved** — MUST be a marketplace (contains 1+ plugin subdirectories with `plugin.json`)
+1. **Reserved** (listed in `reserved_directories`) — organizational container,
+   can have children
+2. **Not reserved** — MUST be a marketplace (contains 1+ plugin subdirectories
+   with `plugin.json`)
 
-This rule ensures the monorepo structure is unambiguous: CI can determine whether any
+This rule ensures the monorepo structure is unambiguous: CI can determine
+whether any
 directory is a marketplace or an organizational container by checking it against
 `reserved_directories`.
 
-**Adding new hierarchy levels:** When a new technology or domain needs organizational
+**Adding new hierarchy levels:** When a new technology or domain needs
+organizational
 nesting (e.g., adding a `rust` ecosystem), add the directory name to
-`reserved_directories` in `config-repo.json`. This is a monorepo-level change that
+`reserved_directories` in `config-repo.json`. This is a monorepo-level change
+that
 requires platform team review via CODEOWNERS.
 
 ### 4.6 Path Flattening Algorithm
 
-Marketplace paths in the monorepo hierarchy (e.g., `common/development/python/uv/quality-agent`)
-must be flattened into dash-separated names for use in checkout directories, symlink names,
-and manifest `path` attributes. The flattening algorithm uses `config-repo.json` to determine
+Marketplace paths in the monorepo hierarchy (e.g.,
+`common/development/python/uv/quality-agent`)
+must be flattened into dash-separated names for use in checkout directories,
+symlink names,
+and manifest `path` attributes. The flattening algorithm uses `config-repo.json`
+to determine
 which leading path components to strip.
 
 **Algorithm:**
 
-1. Start with the marketplace's full hierarchy path (e.g., `common/development/python/uv/quality-agent`)
-2. Split into path segments: `["common", "development", "python", "uv", "quality-agent"]`
-3. Strip consecutive leading segments that match `flattening_strip_prefixes` **in order**:
-   - Compare segment 0 (`common`) with `flattening_strip_prefixes[0]` (`common`) → match, strip
-   - Compare segment 1 (`development`) with `flattening_strip_prefixes[1]` (`development`) → match, strip
+1. Start with the marketplace's full hierarchy path (e.g.,
+   `common/development/python/uv/quality-agent`)
+2. Split into path segments: `["common", "development", "python", "uv",
+   "quality-agent"]`
+3. Strip consecutive leading segments that match `flattening_strip_prefixes`
+   **in order**:
+   - Compare segment 0 (`common`) with `flattening_strip_prefixes[0]` (`common`)
+     → match, strip
+   - Compare segment 1 (`development`) with `flattening_strip_prefixes[1]`
+     (`development`) → match, strip
    - No more prefix entries → stop stripping
 4. Join remaining segments with `-`: `python-uv-quality-agent`
 
 **The stripping is sequential and ordered.** If segment N does not match
-`flattening_strip_prefixes[N]`, stripping stops immediately regardless of whether later
+`flattening_strip_prefixes[N]`, stripping stops immediately regardless of
+whether later
 segments would match. This prevents ambiguous or inconsistent results.
 
 **Examples using the default configuration:**
@@ -716,17 +814,25 @@ segments would match. This prevents ambiguous or inconsistent results.
 | `common/development/node/npm/quality-agent` | Strip `common`, strip `development` → done | `node-npm-quality-agent` |
 | `common/marketing/campaign-tools` | Strip `common`. Next: `marketing` ≠ `development` → stop | `marketing-campaign-tools` |
 
-**Why non-stripped reserved directories are kept in flattened names:** Reserved directories
-like `python`, `uv`, `django`, `node`, `npm` are organizational containers (never
-marketplaces) but carry technology-specific meaning essential for **uniqueness**. If these
+**Why non-stripped reserved directories are kept in flattened names:** Reserved
+directories
+like `python`, `uv`, `django`, `node`, `npm` are organizational containers
+(never
+marketplaces) but carry technology-specific meaning essential for
+**uniqueness**. If these
 were stripped, `common/development/python/uv/quality-agent` and
-`common/development/node/npm/quality-agent` would both flatten to `quality-agent` — a
-collision. By keeping them in the flattened name, each marketplace has a unique identifier
+`common/development/node/npm/quality-agent` would both flatten to
+`quality-agent` — a
+collision. By keeping them in the flattened name, each marketplace has a unique
+identifier
 that reflects its position in the technology hierarchy.
 
-**Uniqueness invariant:** CI MUST validate that all marketplace flattened names (computed
-by this algorithm) are unique across the entire monorepo. If two marketplace paths produce
-the same flattened name, the CI pipeline MUST fail. This is enforced in addition to the
+**Uniqueness invariant:** CI MUST validate that all marketplace flattened names
+(computed
+by this algorithm) are unique across the entire monorepo. If two marketplace
+paths produce
+the same flattened name, the CI pipeline MUST fail. This is enforced in addition
+to the
 filesystem-level uniqueness of full marketplace paths.
 
 ---
@@ -735,8 +841,10 @@ filesystem-level uniqueness of full marketplace paths.
 
 ### 5.1 Project Entry Pattern
 
-Each marketplace the consumer project needs is declared as a separate `<project>` entry in
-the manifest XML. All entries for the same monorepo share the same `name` attribute but
+Each marketplace the consumer project needs is declared as a separate
+`<project>` entry in
+the manifest XML. All entries for the same monorepo share the same `name`
+attribute but
 differ in `path` and `revision`.
 
 ```xml
@@ -758,34 +866,51 @@ differ in `path` and `revision`.
 | `common/development/node/npm/express/express-patterns` | `node-npm-express-express-patterns` | `refs/tags/development/node/npm/express/express-patterns/1.0.0` |
 | `common/development/dotnet/nuget/aspnet/aspnet-scaffolding` | `dotnet-nuget-aspnet-aspnet-scaffolding` | `refs/tags/development/dotnet/nuget/aspnet/aspnet-scaffolding/1.0.0` |
 
-**Who computes flattened names:** The flattened names in the `path` and `dest` attributes
-are authored by the **manifest maintainer** when writing `claude-marketplaces.xml` files.
-The flattening algorithm (Section 4.6) defines how to compute them from the marketplace's
-hierarchy path using the `flattening_strip_prefixes` in `config-repo.json`. The `repo` tool
-does not perform flattening; it uses the literal `path` and `dest` values from the manifest.
-**CI MUST validate** that every `path` and `dest` in `claude-marketplaces.xml` files matches
-the expected flattened name computed by the algorithm. This prevents human error in manifest
+**Who computes flattened names:** The flattened names in the `path` and `dest`
+attributes
+are authored by the **manifest maintainer** when writing
+`claude-marketplaces.xml` files.
+The flattening algorithm (Section 4.6) defines how to compute them from the
+marketplace's
+hierarchy path using the `flattening_strip_prefixes` in `config-repo.json`. The
+`repo` tool
+does not perform flattening; it uses the literal `path` and `dest` values from
+the manifest.
+**CI MUST validate** that every `path` and `dest` in `claude-marketplaces.xml`
+files matches
+the expected flattened name computed by the algorithm. This prevents human error
+in manifest
 authoring.
 
-**Note on `<linkfile>` src:** The `src` attribute uses the **original hierarchy path**
-(with `/` separators), not the flattened form. This is the path to the marketplace
-directory within the monorepo checkout. The `repo` tool's `<linkfile>` supports nested
+**Note on `<linkfile>` src:** The `src` attribute uses the **original hierarchy
+path**
+(with `/` separators), not the flattened form. This is the path to the
+marketplace
+directory within the monorepo checkout. The `repo` tool's `<linkfile>` supports
+nested
 `src` paths. It creates a symlink from the `dest` location pointing to
 `<checkout-path>/<src>`.
 
-**Note on `<linkfile>` dest:** The `repo` tool resolves `<linkfile>` dest paths relative
-to the repo client top directory (the project root). Since `$HOME/.claude-marketplaces/` lives
+**Note on `<linkfile>` dest:** The `repo` tool resolves `<linkfile>` dest paths
+relative
+to the repo client top directory (the project root). Since
+`$HOME/.claude-marketplaces/` lives
 outside the project, the `dest` attribute must use either:
 - An environment variable placeholder resolved by `repo envsubst`
   (e.g., `${CLAUDE_MARKETPLACES_DIR}`), **preferred**, keeps manifests portable
-- A relative path with `../` traversal to reach `$HOME` (fragile, depends on checkout depth)
+- A relative path with `../` traversal to reach `$HOME` (fragile, depends on
+  checkout depth)
 
-The `CLAUDE_MARKETPLACES_DIR` environment variable MUST be set in `.rpmenv` and exported
-before `repo envsubst` runs, so that the placeholder is resolved to the absolute path
+The `CLAUDE_MARKETPLACES_DIR` environment variable MUST be set in `.rpmenv` and
+exported
+before `repo envsubst` runs, so that the placeholder is resolved to the absolute
+path
 (e.g., `/home/<user>/.claude-marketplaces`).
 
-> **Note:** The standard `repo` tool restricts `<linkfile dest>` to paths within the
-> project tree. Our Caylent fork MUST support absolute `dest` paths after `envsubst`
+> **Note:** The standard `repo` tool restricts `<linkfile dest>` to paths within
+the
+> project tree. Our Caylent fork MUST support absolute `dest` paths after
+`envsubst`
 > resolution. See Section 17 for required fork enhancements.
 
 **Attribute breakdown:**
@@ -801,22 +926,29 @@ before `repo envsubst` runs, so that the placeholder is resolved to the absolute
 
 ### 5.2 Manifest Composition
 
-Marketplace entries live in dedicated `claude-marketplaces.xml` files at each level of the
-hierarchy, separate from build-tooling `packages.xml` files. Each level includes the
-`claude-marketplaces.xml` from the level above it, creating a **cascading inheritance chain**.
+Marketplace entries live in dedicated `claude-marketplaces.xml` files at each
+level of the
+hierarchy, separate from build-tooling `packages.xml` files. Each level includes
+the
+`claude-marketplaces.xml` from the level above it, creating a **cascading
+inheritance chain**.
 This mirrors the existing `<include>` composition pattern used by `meta.xml` and
 `packages.xml`.
 
-**How cascading inheritance works:** A consumer project's `meta.xml` includes the
-`claude-marketplaces.xml` at its own hierarchy level. That file includes the one from
-its parent level, which includes its parent, and so on up to the root. The `repo` tool
+**How cascading inheritance works:** A consumer project's `meta.xml` includes
+the
+`claude-marketplaces.xml` at its own hierarchy level. That file includes the one
+from
+its parent level, which includes its parent, and so on up to the root. The
+`repo` tool
 resolves the entire `<include>` chain and merges all `<project>` entries, so the
-consumer project automatically receives every marketplace from its own level AND every
+consumer project automatically receives every marketplace from its own level AND
+every
 level above it.
 
 **Example: what a Python/uv/Django/frontend project receives:**
 
-```
+```text
 ROOT common/ claude-marketplaces.xml                                       →  sdlc-tools, security-review
   ↑ included by
 common/development/ claude-marketplaces.xml                                →  (no marketplace at this level, just passes through)
@@ -832,13 +964,17 @@ common/development/python/uv/django/frontend/ claude-marketplaces.xml      →  
                                                             TOTAL: 6 marketplaces installed
 ```
 
-**This is the core organizational principle:** where you place a marketplace in the
-monorepo hierarchy determines which projects automatically receive it. To add a plugin
-that benefits all Python projects, place it in a marketplace under `common/development/python/`. To add a
-plugin for only Django projects, place it under `common/development/python/uv/django/`. Universal plugins
+**This is the core organizational principle:** where you place a marketplace in
+the
+monorepo hierarchy determines which projects automatically receive it. To add a
+plugin
+that benefits all Python projects, place it in a marketplace under
+`common/development/python/`. To add a
+plugin for only Django projects, place it under
+`common/development/python/uv/django/`. Universal plugins
 go at `common/`.
 
-```
+```text
 repo-specs/
 ├── git-connection/
 │   └── remote.xml                                  ← shared remote definitions
@@ -876,10 +1012,13 @@ repo-specs/
 │                       └── meta.xml
 ```
 
-**Cascading `<include>` chain (example: `common/development/python/uv/django/frontend`):**
+**Cascading `<include>` chain (example:
+`common/development/python/uv/django/frontend`):**
 
-Each `claude-marketplaces.xml` includes the one from its parent level, forming an inheritance
-chain from leaf to root. Every level follows the same pattern; only the `<include>`
+Each `claude-marketplaces.xml` includes the one from its parent level, forming
+an inheritance
+chain from leaf to root. Every level follows the same pattern; only the
+`<include>`
 target and `<project>` entries differ:
 
 ```xml
@@ -939,15 +1078,20 @@ target and `<project>` entries differ:
 </manifest>
 ```
 
-**Note:** The root `claude-marketplaces.xml` includes the `rpm-claude-marketplaces-install`
-package as a `<project>` entry. This ensures that every project using Claude Code
-marketplaces automatically receives the install and uninstall scripts. The install tool
-package is a separate public repo (`caylent-solutions/rpm-claude-marketplaces-install`,
-Apache 2.0 licensed) that is synced to `.packages/rpm-claude-marketplaces-install/`.
+**Note:** The root `claude-marketplaces.xml` includes the
+`rpm-claude-marketplaces-install`
+package as a `<project>` entry. This ensures that every project using Claude
+Code
+marketplaces automatically receives the install and uninstall scripts. The
+install tool
+package is a separate public repo
+(`caylent-solutions/rpm-claude-marketplaces-install`,
+Apache 2.0 licensed) that is synced to
+`.packages/rpm-claude-marketplaces-install/`.
 
 **Resulting include chain for a Python/uv/Django/Frontend project:**
 
-```
+```text
 meta.xml
   ├── remote.xml                                       (remotes)
   ├── packages.xml                                     (build packages)
@@ -959,10 +1103,13 @@ meta.xml
                                 └── claude-marketplaces.xml (common level, universal)
 ```
 
-A `common/development/python/uv/django/frontend` project automatically receives marketplaces from ALL
-levels: universal + development + Python + Python/uv + Python/uv/Django + Python/uv/Django/Frontend.
+A `common/development/python/uv/django/frontend` project automatically receives
+marketplaces from ALL
+levels: universal + development + Python + Python/uv + Python/uv/Django +
+Python/uv/Django/Frontend.
 
-**`meta.xml` references only the leaf `claude-marketplaces.xml`; inheritance handles the rest:**
+**`meta.xml` references only the leaf `claude-marketplaces.xml`; inheritance
+handles the rest:**
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -987,12 +1134,16 @@ levels: universal + development + Python + Python/uv + Python/uv/Django + Python
 </manifest>
 ```
 
-The `${GITBASE}` placeholder is resolved by `repo envsubst` to the value from `.rpmenv`
-(e.g., `https://github.com/caylent-solutions/`). All `<project>` entries referencing
-`remote="caylent"` use this as the base URL, with `name` appended (e.g., fetch URL
+The `${GITBASE}` placeholder is resolved by `repo envsubst` to the value from
+`.rpmenv`
+(e.g., `https://github.com/caylent-solutions/`). All `<project>` entries
+referencing
+`remote="caylent"` use this as the base URL, with `name` appended (e.g., fetch
+URL
 becomes `https://github.com/caylent-solutions/rpm-claude-marketplaces.git`).
 
-**`packages.xml` — build-tooling packages (example for Python/uv/Django/Frontend):**
+**`packages.xml` — build-tooling packages (example for
+Python/uv/Django/Frontend):**
 
 ```xml
 <!-- repo-specs/common/development/python/uv/django/frontend/packages.xml -->
@@ -1006,14 +1157,18 @@ becomes `https://github.com/caylent-solutions/rpm-claude-marketplaces.git`).
 ```
 
 Build packages use a single `<project>` entry per package repo. They do NOT use
-`<linkfile>` (build packages are not Claude Code marketplaces). Multiple levels may
+`<linkfile>` (build packages are not Claude Code marketplaces). Multiple levels
+may
 define `packages.xml` if additional build packages are needed at that level.
 
 **`repo envsubst` behavior:**
 
-The `repo envsubst` command operates on all manifest XML files within the source's
-`.repo/manifests/` directory. It substitutes `${VAR}` placeholders with the values of
-exported environment variables. The following variables MUST be exported before running
+The `repo envsubst` command operates on all manifest XML files within the
+source's
+`.repo/manifests/` directory. It substitutes `${VAR}` placeholders with the
+values of
+exported environment variables. The following variables MUST be exported before
+running
 `repo envsubst`:
 
 | Variable | Source | Example Value |
@@ -1022,19 +1177,27 @@ exported environment variables. The following variables MUST be exported before 
 | `CLAUDE_MARKETPLACES_DIR` | `.rpmenv` (shell expands `${HOME}` at source time) | `/home/vscode/.claude-marketplaces` |
 
 When `.rpmenv` is sourced by the shell, `${HOME}` in
-`CLAUDE_MARKETPLACES_DIR=${HOME}/.claude-marketplaces` is resolved by the shell to the
-actual home directory path. The resulting fully-resolved value is then exported and used
-by `repo envsubst`. In multi-source mode, `repo envsubst` runs **per-source** (after
-`repo init`, before `repo sync`) within each source's `.rpm/sources/<name>/` directory.
+`CLAUDE_MARKETPLACES_DIR=${HOME}/.claude-marketplaces` is resolved by the shell
+to the
+actual home directory path. The resulting fully-resolved value is then exported
+and used
+by `repo envsubst`. In multi-source mode, `repo envsubst` runs **per-source**
+(after
+`repo init`, before `repo sync`) within each source's `.rpm/sources/<name>/`
+directory.
 
-Projects at different hierarchy positions (e.g., `common/development/python/uv/django/frontend` vs
-`common/development/node/npm/express/microservice`) get completely different marketplace sets except for
+Projects at different hierarchy positions (e.g.,
+`common/development/python/uv/django/frontend` vs
+`common/development/node/npm/express/microservice`) get completely different
+marketplace sets except for
 the shared universal root.
 
 ### 5.3 Resolved Marketplace Set
 
-After cascading resolution, a `common/development/python/uv/django/frontend` project's effective
-marketplace set is the union of all `<project>` entries from every `claude-marketplaces.xml`
+After cascading resolution, a `common/development/python/uv/django/frontend`
+project's effective
+marketplace set is the union of all `<project>` entries from every
+`claude-marketplaces.xml`
 in the chain:
 
 | Source Level | Marketplace Entries |
@@ -1049,28 +1212,44 @@ Each entry follows the `<project>` pattern defined in Section 5.1.
 
 ### 5.4 `repo` Tool Behavior With Same-Name Projects
 
-**Why this matters:** The cascading `<include>` chain (Section 5.2) causes multiple
-`<project>` entries to share the **same monorepo `name`** (e.g., `rpm-claude-marketplaces`)
-but with different `path` and `revision` values, one per marketplace. This is how a single
-monorepo gets checked out multiple times, each marketplace at its own version into its own
+**Why this matters:** The cascading `<include>` chain (Section 5.2) causes
+multiple
+`<project>` entries to share the **same monorepo `name`** (e.g.,
+`rpm-claude-marketplaces`)
+but with different `path` and `revision` values, one per marketplace. This is
+how a single
+monorepo gets checked out multiple times, each marketplace at its own version
+into its own
 `.packages/` subdirectory. The `repo` tool explicitly supports this pattern:
 
-1. **Shared object store:** All checkouts of the same `name` within a source share a single
-   `.rpm/sources/<source>/.repo/project-objects/<name>.git/`. The monorepo's git objects are
-   fetched and stored once, then referenced by all marketplace checkouts, no redundant downloads.
-2. **Serialized fetch:** The `repo` tool groups same-name projects and fetches them
-   serially within the same worker thread to prevent race conditions on the shared
+1. **Shared object store:** All checkouts of the same `name` within a source
+   share a single
+      `.rpm/sources/<source>/.repo/project-objects/<name>.git/`. The monorepo's
+   git objects are
+      fetched and stored once, then referenced by all marketplace checkouts, no
+   redundant downloads.
+2. **Serialized fetch:** The `repo` tool groups same-name projects and fetches
+   them
+      serially within the same worker thread to prevent race conditions on the
+   shared
    object store.
-3. **Independent working trees:** Each `<project>` entry gets its own working directory
-   at its specified `path`, checked out to its own `revision` (tag). This is what enables
-   independent semantic versioning per marketplace. `sdlc-tools` can be at `1.2.0` while
+3. **Independent working trees:** Each `<project>` entry gets its own working
+   directory
+      at its specified `path`, checked out to its own `revision` (tag). This is
+   what enables
+      independent semantic versioning per marketplace. `sdlc-tools` can be at
+   `1.2.0` while
    `quality-agent` is at `3.0.1`.
-4. **Precious objects:** The `repo` tool automatically enables `preciousObjects` on
-   shared object stores to prevent garbage collection from pruning objects needed by
+4. **Precious objects:** The `repo` tool automatically enables `preciousObjects`
+   on
+      shared object stores to prevent garbage collection from pruning objects
+   needed by
    other checkouts.
 5. **Linkfile for directories:** The `repo` tool's `<linkfile>` element supports
-   directory targets (not just files). This is required because each `<linkfile src>`
-   points to a marketplace directory within the checkout, creating a symlink from
+      directory targets (not just files). This is required because each
+   `<linkfile src>`
+      points to a marketplace directory within the checkout, creating a symlink
+   from
    `${CLAUDE_MARKETPLACES_DIR}/` to that directory.
 
 ### 5.5 Version Constraints (Fuzzy Pinning)
@@ -1083,8 +1262,10 @@ The `revision` attribute in `<project>` entries supports two modes:
 revision="refs/tags/development/python/uv/quality-agent/1.2.3"
 ```
 
-**Version constraint (fuzzy):** A Python PEP 440-compatible version constraint that
-the Caylent `repo` fork resolves at sync time by scanning available tags and selecting
+**Version constraint (fuzzy):** A Python PEP 440-compatible version constraint
+that
+the Caylent `repo` fork resolves at sync time by scanning available tags and
+selecting
 the highest version that satisfies the constraint.
 
 ```xml
@@ -1108,16 +1289,20 @@ revision="refs/tags/development/python/uv/quality-agent/*"
 | `>=1.0.0,<2.0.0` | Range | Highest within range |
 | `*` | Latest | Highest available tag |
 
-**How it works:** During `repo sync`, the Caylent fork scans all tags matching the
-`<marketplace-path>/` prefix, parses the semver suffix of each tag, evaluates the
+**How it works:** During `repo sync`, the Caylent fork scans all tags matching
+the
+`<marketplace-path>/` prefix, parses the semver suffix of each tag, evaluates
+the
 constraint, and checks out the highest matching version. The resolved version is
 logged so the developer knows exactly which version was selected.
 
 > **Note:** Our Caylent fork MUST support version constraint resolution in the
 > `revision` attribute. See Section 17 for required fork enhancements.
 
-**This applies to both build packages and plugin marketplaces.** Any `<project>` entry
-in `packages.xml` or `claude-marketplaces.xml` can use version constraints in its
+**This applies to both build packages and plugin marketplaces.** Any `<project>`
+entry
+in `packages.xml` or `claude-marketplaces.xml` can use version constraints in
+its
 `revision` attribute.
 
 **When to use version constraints:**
@@ -1129,17 +1314,22 @@ in `packages.xml` or `claude-marketplaces.xml` can use version constraints in it
 | Greenfield/prototyping | Minor-compatible (`~=1.0`) | Stay current with features |
 | Internal tooling | Latest (`*`) | Always latest, fast iteration |
 
-**REQUIREMENT: Version constraints MUST NOT be used unless the package or marketplace
-has comprehensive unit and functional testing in place.** Fuzzy constraints allow
-automatic version updates at sync time. Without test coverage, an update could silently
-break the developer's workflow. Projects using constraints accept the responsibility
+**REQUIREMENT: Version constraints MUST NOT be used unless the package or
+marketplace
+has comprehensive unit and functional testing in place.** Fuzzy constraints
+allow
+automatic version updates at sync time. Without test coverage, an update could
+silently
+break the developer's workflow. Projects using constraints accept the
+responsibility
 of validating that upstream changes are compatible.
 
 **Guideline for marketplace and package maintainers:**
 - Patch releases (x.y.Z) MUST be backward-compatible bug fixes only
 - Minor releases (x.Y.0) MUST be backward-compatible feature additions
 - Major releases (X.0.0) MAY contain breaking changes
-- Maintainers who violate semver compatibility break downstream consumers using constraints
+- Maintainers who violate semver compatibility break downstream consumers using
+  constraints
 
 ---
 
@@ -1147,70 +1337,93 @@ of validating that upstream changes are compatible.
 
 ### 6.1 Claude Code Native Namespacing
 
-Claude Code provides built-in namespace isolation that handles most collision concerns
-natively. Understanding this is critical: it means the RPM delivery layer does NOT need
+Claude Code provides built-in namespace isolation that handles most collision
+concerns
+natively. Understanding this is critical: it means the RPM delivery layer does
+NOT need
 to solve plugin-level namespacing; Claude Code already does.
 
 **`plugin@marketplace` composite keys:**
 
 Claude Code identifies every installed plugin by the composite key
 `<plugin-name>@<marketplace-name>`. This is stored in
-`~/.claude/plugins/installed_plugins.json` and used throughout the system (settings,
-blocklist, enablement). Two plugins with the same name from different marketplaces are
+`~/.claude/plugins/installed_plugins.json` and used throughout the system
+(settings,
+blocklist, enablement). Two plugins with the same name from different
+marketplaces are
 distinct entries because the marketplace qualifier differs.
 
 **Skill namespacing:**
 
-Plugin skills are namespaced by plugin name using `:` syntax. A skill named `review`
+Plugin skills are namespaced by plugin name using `:` syntax. A skill named
+`review`
 in a plugin named `code-quality` becomes `/code-quality:review`. The Claude Code
-documentation states: "Plugin skills are always namespaced to prevent conflicts when
+documentation states: "Plugin skills are always namespaced to prevent conflicts
+when
 multiple plugins have skills with the same name."
 
 **Marketplace identification:**
 
-The `name` field in `marketplace.json` (not the filesystem path) is the marketplace
-identifier. Claude Code uses this name as the key in `~/.claude/plugins/known_marketplaces.json`.
+The `name` field in `marketplace.json` (not the filesystem path) is the
+marketplace
+identifier. Claude Code uses this name as the key in
+`~/.claude/plugins/known_marketplaces.json`.
 
 **Marketplace name collision behavior (verified from CLI source):**
 
-When `claude plugin marketplace add` is called with a marketplace whose `name` already
-exists in `known_marketplaces.json`, Claude Code does **not** reject the addition.
+When `claude plugin marketplace add` is called with a marketplace whose `name`
+already
+exists in `known_marketplaces.json`, Claude Code does **not** reject the
+addition.
 Instead, it applies **last-write-wins** semantics:
 
-1. If the **same source** (e.g., same git repo) is already registered under any name,
+1. If the **same source** (e.g., same git repo) is already registered under any
+   name,
    the CLI returns early with "already materialized", no duplicate is created
 2. If a **different source** uses the same `name`, the CLI logs a debug warning
-   (`"Marketplace '<name>' exists with different source, overwriting"`) and **replaces
+      (`"Marketplace '<name>' exists with different source, overwriting"`) and
+   **replaces
    the existing entry**. The old marketplace is silently removed
-3. If the existing marketplace is **seed-managed** (admin-provisioned), the CLI throws
+3. If the existing marketplace is **seed-managed** (admin-provisioned), the CLI
+   throws
    an error and refuses to overwrite
 
-This means marketplace `name` values in `marketplace.json` MUST be globally unique
+This means marketplace `name` values in `marketplace.json` MUST be globally
+unique
 across all monorepos consumed on a given machine. The RPM naming convention
-(`rpm-claude-marketplaces` prefix) and the install script SHOULD validate that no
+(`rpm-claude-marketplaces` prefix) and the install script SHOULD validate that
+no
 two marketplace directories declare the same `name` in their `marketplace.json`.
 
 **Reserved name protection:**
 
-Claude Code blocks a hardcoded set of reserved names (e.g., `claude-plugins-official`,
-`anthropic-marketplace`, `agent-skills`) and rejects any non-Anthropic source attempting
-to use them. An impersonation regex also blocks names like `official-claude-plugins`.
+Claude Code blocks a hardcoded set of reserved names (e.g.,
+`claude-plugins-official`,
+`anthropic-marketplace`, `agent-skills`) and rejects any non-Anthropic source
+attempting
+to use them. An impersonation regex also blocks names like
+`official-claude-plugins`.
 
 **Intra-marketplace validation:**
 
-Claude Code validates that no two plugins within a single marketplace share the same
-`name` value, reporting: `"Duplicate plugin name '<name>' found in marketplace"`.
+Claude Code validates that no two plugins within a single marketplace share the
+same
+`name` value, reporting: `"Duplicate plugin name '<name>' found in
+marketplace"`.
 
 **Cross-marketplace plugin isolation:**
 
-Plugins from different marketplaces with the same plugin name are fully isolated via
+Plugins from different marketplaces with the same plugin name are fully isolated
+via
 the `plugin@marketplace` composite key. They occupy separate cache directories
-(`~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`) and separate entries in
+(`~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`) and separate
+entries in
 `installed_plugins.json`. No collision is possible at the plugin level.
 
 ### 6.2 RPM Delivery Layer Uniqueness
 
-The RPM layer provides filesystem and manifest-level guarantees that operate below
+The RPM layer provides filesystem and manifest-level guarantees that operate
+below
 Claude Code's namespacing, preventing conflicts before plugins reach the CLI:
 
 | Layer | Enforced By | Guarantee |
@@ -1222,18 +1435,23 @@ Claude Code's namespacing, preventing conflicts before plugins reach the CLI:
 
 ### 6.3 Cross-Monorepo Collision Prevention
 
-If a project consumes marketplaces from multiple monorepos, the `<repo-name>` prefix in
+If a project consumes marketplaces from multiple monorepos, the `<repo-name>`
+prefix in
 the marketplace directory name prevents **filesystem** collisions:
 
-```
-$HOME/.claude-marketplaces/rpm-claude-marketplaces-a-sdlc-tools/   ← from monorepo "rpm-claude-marketplaces-a"
-$HOME/.claude-marketplaces/rpm-claude-marketplaces-b-sdlc-tools/   ← from monorepo "rpm-claude-marketplaces-b"
+```text
+~/.claude-marketplaces/rpm-claude-marketplaces-a-sdlc-tools/   ← from monorepo "rpm-claude-marketplaces-a"
+~/.claude-marketplaces/rpm-claude-marketplaces-b-sdlc-tools/   ← from monorepo "rpm-claude-marketplaces-b"
 ```
 
-However, filesystem uniqueness alone is not sufficient. Each marketplace directory
-contains a `marketplace.json` with a `name` field, and Claude Code uses that `name`
-(not the directory path) as its registry key. Because Claude Code applies last-write-wins
-on name collision, the `marketplace.json` `name` values across all consumed monorepos
+However, filesystem uniqueness alone is not sufficient. Each marketplace
+directory
+contains a `marketplace.json` with a `name` field, and Claude Code uses that
+`name`
+(not the directory path) as its registry key. Because Claude Code applies
+last-write-wins
+on name collision, the `marketplace.json` `name` values across all consumed
+monorepos
 MUST be distinct. In single-monorepo deployments (the current primary use case),
 the flattening algorithm and CI validation guarantee uniqueness. For future
 multi-monorepo deployments, the install script SHOULD verify this invariant
@@ -1246,12 +1464,16 @@ and log a warning if a name conflict is detected before calling
 
 ### 7.1 Script Location and Delivery
 
-The install and uninstall scripts live in a **dedicated RPM package repository**:
-`caylent-solutions/rpm-claude-marketplaces-install` (public, Apache 2.0 licensed).
+The install and uninstall scripts live in a **dedicated RPM package
+repository**:
+`caylent-solutions/rpm-claude-marketplaces-install` (public, Apache 2.0
+licensed).
 
 This package is synced as a `<project>` entry via the root-level
-`repo-specs/common/claude-marketplaces.xml` manifest, which means any project that
-uses Claude Code marketplaces automatically receives the install tool. After sync,
+`repo-specs/common/claude-marketplaces.xml` manifest, which means any project
+that
+uses Claude Code marketplaces automatically receives the install tool. After
+sync,
 the scripts are available at:
 
 | Script | Path After Sync |
@@ -1259,24 +1481,32 @@ the scripts are available at:
 | Install | `.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py` |
 | Uninstall | `.packages/rpm-claude-marketplaces-install/uninstall_claude_marketplaces.py` |
 
-The install script is delivered exclusively via the `rpm-claude-marketplaces-install`
-RPM package, which is synced through the `common/claude-marketplaces.xml` manifest.
+The install script is delivered exclusively via the
+`rpm-claude-marketplaces-install`
+RPM package, which is synced through the `common/claude-marketplaces.xml`
+manifest.
 If `RPM_MARKETPLACE_INSTALL=true` and the script is not found at
-`.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py` after sync,
+`.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py` after
+sync,
 the target MUST fail-fast with a clear error message.
 
 **Repository:** `caylent-solutions/rpm-claude-marketplaces-install`
 - **Visibility:** Public
 - **License:** Apache 2.0
-- **Purpose:** Contains the install and uninstall scripts for Claude Code marketplace
+- **Purpose:** Contains the install and uninstall scripts for Claude Code
+  marketplace
   plugin discovery and registration
-- **Synced by:** `repo-specs/common/claude-marketplaces.xml` in `caylent-private-rpm`
+- **Synced by:** `repo-specs/common/claude-marketplaces.xml` in
+  `caylent-private-rpm`
 
 ### 7.2 Preconditions
 
-The scripts MUST be invoked by `rpmConfigure` (install) and `rpmClean` (uninstall)
-respectively, after `repo sync` has completed. The scripts do not perform any git
-operations or `repo` commands. They operate solely on the filesystem state produced
+The scripts MUST be invoked by `rpmConfigure` (install) and `rpmClean`
+(uninstall)
+respectively, after `repo sync` has completed. The scripts do not perform any
+git
+operations or `repo` commands. They operate solely on the filesystem state
+produced
 by `repo sync`.
 
 ### 7.3 Configuration
@@ -1310,7 +1540,8 @@ Configure Python `logging` module with structured output. Use `logging.info`,
 Check if `$HOME/.claude-marketplaces` exists.
 
 - If it does NOT exist, log a warning and exit `0`. This is not an error; the
-  project's RPM manifest may not declare any Claude Code plugins, or `rpmConfigure`
+    project's RPM manifest may not declare any Claude Code plugins, or
+  `rpmConfigure`
   may not have been run yet.
 
 #### Step 5: Discover Marketplace Entries
@@ -1396,19 +1627,26 @@ The uninstall script reverses the install script's operations. It is called by
 **Steps:**
 
 1. Verify `claude` CLI on PATH (fail-fast with exit 127 if missing)
-2. Verify `$CLAUDE_MARKETPLACES_DIR` exists (exit 0 if missing — nothing to uninstall)
+2. Verify `$CLAUDE_MARKETPLACES_DIR` exists (exit 0 if missing — nothing to
+   uninstall)
 3. Discover marketplace entries (same logic as install script Step 5)
 4. For each marketplace:
-   a. Read marketplace name from `.claude-plugin/marketplace.json` (same as install Step 6b)
-   b. Discover plugins via `.claude-plugin/plugin.json` files (same as install Step 6d)
-   c. Uninstall each plugin: `claude plugin uninstall <plugin-name>@<marketplace-name> --scope user`
-   d. Remove marketplace registration: `claude plugin marketplace remove <marketplace-name>`
+      a. Read marketplace name from `.claude-plugin/marketplace.json` (same as
+   install Step 6b)
+      b. Discover plugins via `.claude-plugin/plugin.json` files (same as
+   install Step 6d)
+      c. Uninstall each plugin: `claude plugin uninstall
+   <plugin-name>@<marketplace-name> --scope user`
+      d. Remove marketplace registration: `claude plugin marketplace remove
+   <marketplace-name>`
 5. Log summary of uninstalled plugins and removed marketplaces
 
-**Error handling:** Same rules as install script (Section 7.5). Individual failures
+**Error handling:** Same rules as install script (Section 7.5). Individual
+failures
 do not abort the entire run; all entries are processed and a summary is logged.
 
-**Idempotency:** Safe to run multiple times. Uninstalling an already-uninstalled plugin
+**Idempotency:** Safe to run multiple times. Uninstalling an already-uninstalled
+plugin
 or removing an already-removed marketplace is a no-op.
 
 ---
@@ -1417,8 +1655,10 @@ or removing an already-removed marketplace is a no-op.
 
 ### 8.1 Multi-Source `.rpmenv` Format
 
-RPM supports 1-to-many manifest sources. Each source has a URL, revision, and manifest
-path. The `.rpmenv` file uses **named sources** with a registry variable that controls
+RPM supports 1-to-many manifest sources. Each source has a URL, revision, and
+manifest
+path. The `.rpmenv` file uses **named sources** with a registry variable that
+controls
 discovery and processing order.
 
 ```properties
@@ -1461,7 +1701,7 @@ RPM_SOURCE_marketplaces_PATH=repo-specs/common/development/python/make/argparse/
 
 **Multi-source directory structure after sync:**
 
-```
+```text
 project-root/
 ├── .rpm/
 │   └── sources/
@@ -1477,20 +1717,28 @@ project-root/
 │   └── rpm-claude-marketplaces-install → ../.rpm/sources/marketplaces/.packages/rpm-claude-marketplaces-install
 ```
 
-Each source gets its own isolated `.repo/` state and `.packages/` directory under
-`.rpm/sources/<name>/`. The top-level `.packages/` directory contains only symlinks
-aggregated from all sources. This isolation ensures sources do not interfere with
+Each source gets its own isolated `.repo/` state and `.packages/` directory
+under
+`.rpm/sources/<name>/`. The top-level `.packages/` directory contains only
+symlinks
+aggregated from all sources. This isolation ensures sources do not interfere
+with
 each other and can be synced independently.
 
 ### 8.2 `rpmConfigure` Lifecycle (Multi-Source)
 
 The `rpmConfigure` target MUST execute the following steps in order:
 
-1. Parse `.rpmenv`, discover `RPM_SOURCES` and all `RPM_SOURCE_<name>_*` variable groups
-2. Validate: all required variables present for each source → fail-fast if missing
-3. Install repo tool (once): `pipx install git+${REPO_URL}@${REPO_REV}` where `REPO_URL`
-   and `REPO_REV` are defined in `.rpmenv`. This installs the Caylent fork of repo.
-4. If `RPM_MARKETPLACE_INSTALL=true`: `mkdir -p $CLAUDE_MARKETPLACES_DIR`, pre-sync
+1. Parse `.rpmenv`, discover `RPM_SOURCES` and all `RPM_SOURCE_<name>_*`
+   variable groups
+2. Validate: all required variables present for each source → fail-fast if
+   missing
+3. Install repo tool (once): `pipx install git+${REPO_URL}@${REPO_REV}` where
+   `REPO_URL`
+      and `REPO_REV` are defined in `.rpmenv`. This installs the Caylent fork of
+   repo.
+4. If `RPM_MARKETPLACE_INSTALL=true`: `mkdir -p $CLAUDE_MARKETPLACES_DIR`,
+   pre-sync
    cleanup `rm -rf ${CLAUDE_MARKETPLACES_DIR}/*`
 5. For each source in `RPM_SOURCES` order:
    a. `mkdir -p .rpm/sources/<name>`
@@ -1499,37 +1747,47 @@ The `rpmConfigure` target MUST execute the following steps in order:
    d. `repo sync`
 6. Aggregate: for each `.rpm/sources/<name>/.packages/*`, create a symlink in
    the top-level `.packages/` directory
-7. Collision check: if two sources produce the same package name → fail-fast with
+7. Collision check: if two sources produce the same package name → fail-fast
+   with
    error identifying both sources and the conflicting path
 8. Update `.gitignore` with `.rpm/` and `.packages/` if not already present
 9. If `RPM_MARKETPLACE_INSTALL=true`:
-   a. Look for `.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py`
+      a. Look for
+   `.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py`
    b. If not found → fail-fast: `"RPM_MARKETPLACE_INSTALL=true but
-      rpm-claude-marketplaces-install package not found. Ensure a marketplace source
+            rpm-claude-marketplaces-install package not found. Ensure a
+      marketplace source
       is defined in RPM_SOURCES that includes the install tool package."`
-   c. Execute `python3 .packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py`
+      c. Execute `python3
+   .packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py`
 
 ### 8.3 `rpmClean` Behavior
 
-The `rpmClean` target MUST perform a full teardown of both RPM state and Claude Code
+The `rpmClean` target MUST perform a full teardown of both RPM state and Claude
+Code
 plugin/marketplace registrations:
 
-```
+```text
 1. If RPM_MARKETPLACE_INSTALL=true:
    a. Run uninstall_claude_marketplaces.py (uninstalls plugins and removes marketplaces)
    b. rm -rf $HOME/.claude-marketplaces/
 2. rm -rf .packages/ .rpm/
 ```
 
-Steps MUST execute in this order. Uninstalling plugins first ensures Claude Code's
-registry is clean. Removing marketplaces before deleting symlinks ensures the CLI can
-resolve paths during removal. Deleting `.packages/` and `.rpm/` last avoids broken
+Steps MUST execute in this order. Uninstalling plugins first ensures Claude
+Code's
+registry is clean. Removing marketplaces before deleting symlinks ensures the
+CLI can
+resolve paths during removal. Deleting `.packages/` and `.rpm/` last avoids
+broken
 symlinks during the uninstall steps.
 
 ### 8.4 `RPM_MARKETPLACE_INSTALL` Toggle
 
-The `RPM_MARKETPLACE_INSTALL` variable controls whether the install script runs after
-sync. It defaults to `false` if not set. This allows projects to use RPM for build
+The `RPM_MARKETPLACE_INSTALL` variable controls whether the install script runs
+after
+sync. It defaults to `false` if not set. This allows projects to use RPM for
+build
 packages without pulling or installing Claude Code marketplaces.
 
 | Value | Behavior |
@@ -1540,26 +1798,31 @@ packages without pulling or installing Claude Code marketplaces.
 ### 8.5 Makefile Auto-Apply Logic
 
 The existing auto-apply logic in the `Makefile` includes task definitions from
-directories in `.packages/`. Monorepo checkouts for Claude Code marketplaces may contain
+directories in `.packages/`. Monorepo checkouts for Claude Code marketplaces may
+contain
 files that should NOT be auto-applied as Make targets.
 
-The auto-apply logic SHOULD be verified to confirm that monorepo checkout directories
-do not contain `Makefile` or `.mk` files. If they do, a filter MUST be added to skip
+The auto-apply logic SHOULD be verified to confirm that monorepo checkout
+directories
+do not contain `Makefile` or `.mk` files. If they do, a filter MUST be added to
+skip
 directories that are monorepo checkouts (identifiable by the
 `rpm-claude-marketplaces-<marketplace>` naming pattern, which differs from the
 `rpm-<runtime>-<descriptive-name>` pattern used by build packages).
 
 ### 8.6 Makefile Implementation Requirements
 
-The `Makefile` MUST implement three public targets: `rpmConfigure`, `rpmClean`, and
-`rpmHostSetup`. All complex logic MUST be delegated to Python scripts located under
+The `Makefile` MUST implement three public targets: `rpmConfigure`, `rpmClean`,
+and
+`rpmHostSetup`. All complex logic MUST be delegated to Python scripts located
+under
 `scripts/rpm/` in the `caylent-private-rpm` repository. The Makefile is a thin
 orchestration layer that calls Python — it does NOT contain shell loops, parsing
 logic, or conditional branching beyond simple Make prerequisites.
 
-**Architecture: Makefile delegates to Python**
+#### Architecture: Makefile delegates to Python
 
-```
+```text
 Makefile targets:            Python scripts (scripts/rpm/):
 ─────────────────            ─────────────────────────────
 rpmHostSetup     ──────►     scripts/rpm/host_setup.py
@@ -1567,9 +1830,12 @@ rpmConfigure     ──────►     scripts/rpm/configure.py
 rpmClean         ──────►     scripts/rpm/clean.py
 ```
 
-The Makefile simply calls `python3 scripts/rpm/<script>.py` with the `.rpmenv` path
-as an argument. Each Python script reads `.rpmenv`, performs its work, and exits with
-an appropriate code. This avoids all Make-specific complexity (variable expansion
+The Makefile simply calls `python3 scripts/rpm/<script>.py` with the `.rpmenv`
+path
+as an argument. Each Python script reads `.rpmenv`, performs its work, and exits
+with
+an appropriate code. This avoids all Make-specific complexity (variable
+expansion
 differences, per-line shell invocation, CSV parsing in Make syntax).
 
 **Reference Makefile structure:**
@@ -1581,13 +1847,13 @@ SCRIPTS_DIR := scripts/rpm
 .PHONY: rpmHostSetup rpmConfigure rpmClean
 
 rpmHostSetup:
-	python3 $(SCRIPTS_DIR)/host_setup.py $(RPMENV)
+    python3 $(SCRIPTS_DIR)/host_setup.py $(RPMENV)
 
 rpmConfigure: rpmHostSetup
-	python3 $(SCRIPTS_DIR)/configure.py $(RPMENV)
+    python3 $(SCRIPTS_DIR)/configure.py $(RPMENV)
 
 rpmClean:
-	python3 $(SCRIPTS_DIR)/clean.py $(RPMENV)
+    python3 $(SCRIPTS_DIR)/clean.py $(RPMENV)
 ```
 
 **Python script: `scripts/rpm/host_setup.py`**
@@ -1601,27 +1867,37 @@ Acceptance criteria:
 **Python script: `scripts/rpm/configure.py`**
 
 Acceptance criteria:
-1. Read and parse `.rpmenv` (source it via `subprocess` or parse `KEY=VALUE` lines,
+1. Read and parse `.rpmenv` (source it via `subprocess` or parse `KEY=VALUE`
+   lines,
    resolving shell variables like `${HOME}`)
 2. Parse `RPM_SOURCES` (comma-separated) into an ordered list
-3. For each source name, validate that `RPM_SOURCE_<name>_URL`, `RPM_SOURCE_<name>_REVISION`,
-   and `RPM_SOURCE_<name>_PATH` are all set. Exit non-zero with error naming the missing
+3. For each source name, validate that `RPM_SOURCE_<name>_URL`,
+   `RPM_SOURCE_<name>_REVISION`,
+      and `RPM_SOURCE_<name>_PATH` are all set. Exit non-zero with error naming
+   the missing
    variable and source name if any are absent.
 4. If `RPM_MARKETPLACE_INSTALL=true`:
    a. `os.makedirs(CLAUDE_MARKETPLACES_DIR, exist_ok=True)`
    b. Remove all contents: delete everything in `CLAUDE_MARKETPLACES_DIR`
 5. For each source in order:
    a. `os.makedirs(f".rpm/sources/{name}", exist_ok=True)`
-   b. In `.rpm/sources/{name}/`: run `repo init -u <URL> -b <REVISION> -m <PATH>`
-   c. Export `GITBASE` and `CLAUDE_MARKETPLACES_DIR` to environment, run `repo envsubst`
+      b. In `.rpm/sources/{name}/`: run `repo init -u <URL> -b <REVISION> -m
+   <PATH>`
+      c. Export `GITBASE` and `CLAUDE_MARKETPLACES_DIR` to environment, run
+   `repo envsubst`
    d. Run `repo sync`
-   e. If `repo sync` exits non-zero, abort immediately. Do NOT continue to next source.
-6. Aggregate: for each `.rpm/sources/{name}/.packages/*`, create symlink in `.packages/`.
-   If two sources produce the same package name, exit non-zero with error naming both
+      e. If `repo sync` exits non-zero, abort immediately. Do NOT continue to
+   next source.
+6. Aggregate: for each `.rpm/sources/{name}/.packages/*`, create symlink in
+   `.packages/`.
+      If two sources produce the same package name, exit non-zero with error
+   naming both
    sources and the conflicting package.
 7. Ensure `.gitignore` contains `.packages/` and `.rpm/` entries
 8. If `RPM_MARKETPLACE_INSTALL=true`:
-   a. Verify `.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py` exists
+      a. Verify
+   `.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py`
+   exists
    b. If not found, exit non-zero: "RPM_MARKETPLACE_INSTALL=true but
       rpm-claude-marketplaces-install package not found"
    c. Run the install script via `subprocess`
@@ -1646,30 +1922,38 @@ Acceptance criteria:
 - No retry loops or temporal delays
 - All subprocess calls MUST check exit codes and propagate failures
 
-**Script location:** These scripts live in `caylent-private-rpm` at `scripts/rpm/` and
-are committed to the repo. They are available before `repo sync` (unlike the install
-script which is delivered by sync). Consumer projects receive them as part of the
+**Script location:** These scripts live in `caylent-private-rpm` at
+`scripts/rpm/` and
+are committed to the repo. They are available before `repo sync` (unlike the
+install
+script which is delivered by sync). Consumer projects receive them as part of
+the
 `.packages/` symlink to the build source.
 
 ### 8.7 Symlink Chain Architecture
 
-After multi-source aggregation, paths from `$HOME/.claude-marketplaces/` to actual
+After multi-source aggregation, paths from `$HOME/.claude-marketplaces/` to
+actual
 files traverse two levels of symlinks:
 
-```
+```text
 $HOME/.claude-marketplaces/<monorepo>-<marketplace>/
   → <project-root>/.packages/<monorepo>-<marketplace>/common/<marketplace-path>/
     → <project-root>/.rpm/sources/<source>/.packages/<monorepo>-<marketplace>/common/<marketplace-path>/
 ```
 
-The first link is created by `<linkfile>` during `repo sync`. The second link is created
-by the aggregation step in `rpmConfigure`. Both are standard filesystem symlinks and
-work correctly on Linux and macOS. Tools that need to resolve the actual filesystem path
+The first link is created by `<linkfile>` during `repo sync`. The second link is
+created
+by the aggregation step in `rpmConfigure`. Both are standard filesystem symlinks
+and
+work correctly on Linux and macOS. Tools that need to resolve the actual
+filesystem path
 MUST use `readlink -f` or `realpath`, not just the symlink target.
 
 ### 8.8 Claude CLI Requirements
 
-The `claude` CLI MUST support the following subcommands (verified during `rpmHostSetup`):
+The `claude` CLI MUST support the following subcommands (verified during
+`rpmHostSetup`):
 
 | Command | Purpose |
 |---|---|
@@ -1679,9 +1963,12 @@ The `claude` CLI MUST support the following subcommands (verified during `rpmHos
 | `claude plugin install <name>@<marketplace> --scope user` | Install a plugin from a marketplace |
 | `claude plugin uninstall <name>@<marketplace> --scope user` | Uninstall a plugin |
 
-The spec does not pin a minimum Claude CLI version. The `rpmHostSetup` target validates
-that `claude` is on PATH; the install script validates that the required subcommands
-are functional by checking the exit code of its first `claude plugin` invocation.
+The spec does not pin a minimum Claude CLI version. The `rpmHostSetup` target
+validates
+that `claude` is on PATH; the install script validates that the required
+subcommands
+are functional by checking the exit code of its first `claude plugin`
+invocation.
 
 ---
 
@@ -1689,14 +1976,18 @@ are functional by checking the exit code of its first `claude plugin` invocation
 
 ### 9.0 Project Bootstrapping (How RPM Files Arrive)
 
-Before `make rpmConfigure` can run, the project must contain the RPM bootstrap files
-(`.rpmenv`, `Makefile`). How these files arrive depends on whether the project uses
+Before `make rpmConfigure` can run, the project must contain the RPM bootstrap
+files
+(`.rpmenv`, `Makefile`). How these files arrive depends on whether the project
+uses
 Caylent DevContainers.
 
 #### 9.0.1 DevContainer Path: `cdevcontainer setup-devcontainer`
 
-The **Caylent Devcontainer CLI** (`cdevcontainer`) bootstraps projects by cloning a
-**DevContainer catalog repository**, selecting a catalog entry, and copying its files
+The **Caylent Devcontainer CLI** (`cdevcontainer`) bootstraps projects by
+cloning a
+**DevContainer catalog repository**, selecting a catalog entry, and copying its
+files
 into the project. The catalog system has three layers:
 
 | Layer | Source Directory in Catalog Repo | Copied To | Purpose |
@@ -1707,31 +1998,37 @@ into the project. The catalog system has three layers:
 
 To bootstrap a project with RPM:
 
-```
+```bash
 cdevcontainer setup-devcontainer <project-path>
 ```
 
 Or, to select a specific catalog entry directly:
 
-```
+```bash
 cdevcontainer setup-devcontainer --catalog-entry rpm-python-uv <project-path>
 ```
 
-**Where the RPM files come from:** The RPM bootstrap files are **part of the catalog
-repository**, not generated by the CLI tool itself. The CLI copies them to the project
+**Where the RPM files come from:** The RPM bootstrap files are **part of the
+catalog
+repository**, not generated by the CLI tool itself. The CLI copies them to the
+project
 just like any other catalog file:
 
-- `.rpmenv` and `Makefile` live in `common/root-project-assets/` (copied to project
+- `.rpmenv` and `Makefile` live in `common/root-project-assets/` (copied to
+  project
   root)
 
-The install script is NOT part of the DevContainer catalog. It is delivered exclusively
-by `repo sync` as part of the `rpm-claude-marketplaces-install` RPM package (synced via
+The install script is NOT part of the DevContainer catalog. It is delivered
+exclusively
+by `repo sync` as part of the `rpm-claude-marketplaces-install` RPM package
+(synced via
 `common/claude-marketplaces.xml`). It appears at
-`.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py` after sync.
+`.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py` after
+sync.
 
 After setup, the project contains:
 
-```
+```text
 <project-path>/
 ├── .rpmenv                                        ← from common/root-project-assets/
 ├── Makefile                                       ← from common/root-project-assets/
@@ -1752,9 +2049,12 @@ After setup, the project contains:
 The project team customizes `project-setup.sh` to call `make rpmConfigure` (see
 Section 14.2 for the lifecycle hook chain).
 
-**`.rpmenv` contains placeholders that must be filled in.** The `.rpmenv` file from
-`common/root-project-assets/` is a template with placeholder values for project-specific
-RPM configuration. The developer MUST edit these values before opening the project in a
+**`.rpmenv` contains placeholders that must be filled in.** The `.rpmenv` file
+from
+`common/root-project-assets/` is a template with placeholder values for
+project-specific
+RPM configuration. The developer MUST edit these values before opening the
+project in a
 devcontainer:
 
 ```properties
@@ -1790,48 +2090,58 @@ RPM_SOURCE_marketplaces_PATH=<path-to-claude-marketplaces.xml-in-manifest-repo>
 
 Values like `REPO_URL`, `REPO_REV`, `CLAUDE_MARKETPLACES_DIR`, and
 `RPM_MARKETPLACE_INSTALL` have sensible defaults and rarely change. The
-project-specific values that MUST be filled in are each source's `_URL`, `_REVISION`,
+project-specific values that MUST be filled in are each source's `_URL`,
+`_REVISION`,
 `_PATH` variables and `GITBASE`.
 
 **The `cdevcontainer code` workflow.** After `cdevcontainer setup-devcontainer`
-scaffolds the project, the developer uses `cdevcontainer code` to open the project in
+scaffolds the project, the developer uses `cdevcontainer code` to open the
+project in
 VS Code on the host:
 
-```
+```bash
 cdevcontainer code <project-path>
 ```
 
-This opens the project **on the host** (not in a devcontainer). What happens next
+This opens the project **on the host** (not in a devcontainer). What happens
+next
 depends on whether the project is new or already configured:
 
 **First-time project setup (project lead, once per project):**
 
 1. `cdevcontainer code <project-path>` opens the project on the host
-2. Edit `.rpmenv` to fill in the project-specific RPM values (manifest URL, tag, etc.)
+2. Edit `.rpmenv` to fill in the project-specific RPM values (manifest URL, tag,
+   etc.)
 3. Edit `project-setup.sh` to add `make rpmConfigure` to the lifecycle hook
 4. Commit these files to git
 5. Reopen in VS Code, accept the "Reopen in Container" prompt
-6. The devcontainer builds, `postCreateCommand` runs `project-setup.sh`, which calls
+6. The devcontainer builds, `postCreateCommand` runs `project-setup.sh`, which
+   calls
    `make rpmConfigure` with the actual values from `.rpmenv`
 
-Once `.rpmenv` and `project-setup.sh` are committed, every subsequent developer who
+Once `.rpmenv` and `project-setup.sh` are committed, every subsequent developer
+who
 clones the project gets RPM automatically. They do not need to edit any files.
 
 **Subsequent developers (project already configured):**
 
-1. Clone the project (`.rpmenv` and `project-setup.sh` are already committed with
+1. Clone the project (`.rpmenv` and `project-setup.sh` are already committed
+   with
    real values and `make rpmConfigure` in the hook)
 2. `cdevcontainer code <project-path>` opens the project on the host
 3. Reopen in container
-4. `postCreateCommand` → `project-setup.sh` → `make rpmConfigure` runs automatically
+4. `postCreateCommand` → `project-setup.sh` → `make rpmConfigure` runs
+   automatically
 
-**If the project team does NOT add `make rpmConfigure` to `project-setup.sh`**, RPM
+**If the project team does NOT add `make rpmConfigure` to `project-setup.sh`**,
+RPM
 will not run automatically during the devcontainer lifecycle. In that case, the
 developer must run `make rpmConfigure` manually after the devcontainer is built.
 
 #### 9.0.2 DevContainer Catalogs and the `rpm-` Naming Convention
 
-Catalogs are Git repositories containing one or more catalog entries under `catalog/`.
+Catalogs are Git repositories containing one or more catalog entries under
+`catalog/`.
 Each entry has a `catalog-entry.json` with metadata:
 
 ```json
@@ -1845,7 +2155,8 @@ Each entry has a `catalog-entry.json` with metadata:
 ```
 
 Entry names follow the pattern `^[a-z][a-z0-9-]*[a-z0-9]$`. Catalog entries that
-include RPM are prefixed with `rpm-` so developers can identify which entries come with
+include RPM are prefixed with `rpm-` so developers can identify which entries
+come with
 RPM (and therefore include build packages and Claude Code marketplaces):
 
 | Catalog Entry | What It Includes |
@@ -1855,18 +2166,21 @@ RPM (and therefore include build packages and Claude Code marketplaces):
 | `rpm-node-npm` | DevContainer + RPM + Node/npm build packages + Claude marketplaces for Node/npm |
 | `default` (no prefix) | General-purpose DevContainer, no RPM, no packages, no marketplaces |
 
-The `rpm-` prefix signals: "this entry bootstraps RPM, which manages build packages
-and Claude Code plugin marketplaces." Entries without the `rpm-` prefix provide a
+The `rpm-` prefix signals: "this entry bootstraps RPM, which manages build
+packages
+and Claude Code plugin marketplaces." Entries without the `rpm-` prefix provide
+a
 DevContainer but do not include RPM infrastructure.
 
 Users browse available entries with:
 
-```
+```bash
 cdevcontainer catalog list
 cdevcontainer catalog list --tags python,rpm
 ```
 
-Catalogs are consumed by setting `DEVCONTAINER_CATALOG_URL` (supports `@tag` suffix
+Catalogs are consumed by setting `DEVCONTAINER_CATALOG_URL` (supports `@tag`
+suffix
 for pinning) or by passing `--catalog-url` directly.
 
 #### 9.0.3 What the Catalog Repo Must Contain for RPM Support
@@ -1879,19 +2193,26 @@ To support RPM, the catalog repository MUST include the following files in its
 | `.rpmenv` | `common/root-project-assets/` | project root | All entries |
 | `Makefile` | `common/root-project-assets/` | project root | All entries |
 
-The install script is NOT part of the DevContainer catalog. It is delivered by `repo sync`
-as part of the `rpm-claude-marketplaces-install` RPM package. Both files above live in
-common directories because they are identical across all `rpm-` catalog entries. Non-RPM
-entries (e.g., `default`) will also receive these files, but that is harmless: `make
-rpmConfigure` only runs when `project-setup.sh` invokes it for RPM-configured projects.
+The install script is NOT part of the DevContainer catalog. It is delivered by
+`repo sync`
+as part of the `rpm-claude-marketplaces-install` RPM package. Both files above
+live in
+common directories because they are identical across all `rpm-` catalog entries.
+Non-RPM
+entries (e.g., `default`) will also receive these files, but that is harmless:
+`make
+rpmConfigure` only runs when `project-setup.sh` invokes it for RPM-configured
+projects.
 
 **Catalog maintainer responsibility:** When adding RPM support to a catalog, the
 maintainer MUST add these three files to the common directories and ensure
-`project-setup.sh` documents `make rpmConfigure` as the expected project-setup command.
+`project-setup.sh` documents `make rpmConfigure` as the expected project-setup
+command.
 
 #### 9.0.4 Non-DevContainer Path: Manual Setup
 
-Projects that do not use Caylent DevContainers must set up the RPM bootstrap files
+Projects that do not use Caylent DevContainers must set up the RPM bootstrap
+files
 manually. The developer creates the following at the project root:
 
 | File | Source | Purpose |
@@ -1901,13 +2222,17 @@ manually. The developer creates the following at the project root:
 
 The `Makefile` and `.rpmenv` are committed to git. Once these files exist, the
 developer runs `make rpmConfigure` (see Section 9.1), which handles the rest:
-prerequisite checks (`rpmHostSetup`), repo sync, and marketplace/plugin installation.
+prerequisite checks (`rpmHostSetup`), repo sync, and marketplace/plugin
+installation.
 
 **Install script delivery:** The install script is delivered as part of the
 `rpm-claude-marketplaces-install` RPM package during `repo sync` (synced via
-`common/claude-marketplaces.xml`). After sync completes, the script is available at
-`.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py` and the
-Makefile locates and runs it. There is no need to pre-stage the script before the first
+`common/claude-marketplaces.xml`). After sync completes, the script is available
+at
+`.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py` and
+the
+Makefile locates and runs it. There is no need to pre-stage the script before
+the first
 sync. This applies to both DevContainer and non-DevContainer projects.
 
 #### 9.0.5 What Each Path Produces
@@ -1922,19 +2247,23 @@ Regardless of how the bootstrap files arrive, the end state is the same:
 | Setup command | `make rpmConfigure` (automatic via lifecycle hook) | `make rpmConfigure` (manual) |
 
 After bootstrapping, the lifecycle is identical: `make rpmConfigure` to set up,
-`make rpmClean` to tear down, regardless of how the project was initially bootstrapped.
+`make rpmClean` to tear down, regardless of how the project was initially
+bootstrapped.
 
 ### 9.1 What `make rpmConfigure` Does (Step-by-Step)
 
-This section is a reference for the internal steps of `make rpmConfigure`. The target
-is idempotent: running it multiple times produces the same result. It runs automatically
-via `project-setup.sh` in the devcontainer lifecycle (Section 14.2), or manually by the
+This section is a reference for the internal steps of `make rpmConfigure`. The
+target
+is idempotent: running it multiple times produces the same result. It runs
+automatically
+via `project-setup.sh` in the devcontainer lifecycle (Section 14.2), or manually
+by the
 developer outside a devcontainer (Section 15.5).
 
 The Makefile delegates all logic to `python3 scripts/rpm/configure.py .rpmenv`
 (see Section 8.6). The steps below describe what the Python script does:
 
-```
+```text
 make rpmConfigure → python3 scripts/rpm/configure.py .rpmenv
 
 1. make rpmHostSetup (idempotent)             → prerequisite checks + environment setup:
@@ -1965,15 +2294,19 @@ make rpmConfigure → python3 scripts/rpm/configure.py .rpmenv
       iii.Discovers and installs plugins from each marketplace
 ```
 
-**Pre-sync cleanup rationale:** Step 4b clears all existing marketplace symlinks before
-`repo sync` creates fresh ones. This ensures the marketplace directory always reflects
-exactly the current manifests' declared marketplaces, with no stale symlinks from
+**Pre-sync cleanup rationale:** Step 4b clears all existing marketplace symlinks
+before
+`repo sync` creates fresh ones. This ensures the marketplace directory always
+reflects
+exactly the current manifests' declared marketplaces, with no stale symlinks
+from
 previous syncs or different project configurations. Step 4 only executes when
-`RPM_MARKETPLACE_INSTALL=true`. See Section 14.5 for multi-project considerations.
+`RPM_MARKETPLACE_INSTALL=true`. See Section 14.5 for multi-project
+considerations.
 
 ### 9.2 Adding a Marketplace to a Project
 
-```
+```text
 Manifest maintainer:
 1. Add <project> + <linkfile> entry to claude-marketplaces.xml
 2. Tag manifest repo
@@ -1986,7 +2319,7 @@ Project developer:
 
 ### 9.3 Removing a Marketplace From a Project
 
-```
+```text
 Manifest maintainer:
 1. Remove <project> entry from claude-marketplaces.xml
 2. Tag manifest repo
@@ -1999,7 +2332,7 @@ Project developer:
 
 ### 9.4 Upgrading a Marketplace Version
 
-```
+```text
 Monorepo maintainer (must happen first):
 1. Publish the new marketplace version in the monorepo (see Section 9.5)
    (e.g., git tag python/uv/django/django-helpers/1.1.0)
@@ -2016,7 +2349,7 @@ Project developer:
 
 ### 9.5 Publishing a New Marketplace Version (Monorepo Maintainer)
 
-```
+```text
 1. Make changes to <marketplace-path>/ subdirectory
    (e.g., python/uv/django/django-helpers/)
 2. Open PR, scoped CI validates, CODEOWNERS approve
@@ -2028,7 +2361,7 @@ Project developer:
 
 ### 9.6 Adding a New Marketplace to the Monorepo
 
-```
+```text
 1. Create marketplace directory at the appropriate hierarchy level
    (e.g., mkdir -p node/npm/express/express-patterns/)
 2. Add plugin subdirectories with plugin.json and implementation files
@@ -2062,13 +2395,15 @@ The plugin monorepo MUST have CI that enforces:
 
 ### 10.2 CODEOWNERS and Governance
 
-The monorepo MUST use GitHub CODEOWNERS to enforce ownership at different levels of
+The monorepo MUST use GitHub CODEOWNERS to enforce ownership at different levels
+of
 the hierarchy. This enables teams with domain expertise to own their respective
-marketplace scopes while maintaining shared governance for universal marketplaces.
+marketplace scopes while maintaining shared governance for universal
+marketplaces.
 
 **CODEOWNERS file:**
 
-```
+```text
 # Root-level governance, universal marketplaces require platform team approval
 /common/sdlc-tools/                    @caylent-solutions/platform-team
 /common/security-review/               @caylent-solutions/security-team
@@ -2093,10 +2428,14 @@ marketplace scopes while maintaining shared governance for universal marketplace
 
 **Single dynamic pipeline (marketplace path as input):**
 
-Because the single-scope PR rule (Section 10.1) guarantees that each PR touches exactly
-one marketplace, all pipelines share a single reusable workflow that receives the
-**marketplace path as an input parameter**. There are no per-marketplace pipeline
-definitions. The pipeline determines the marketplace path by inspecting the changed
+Because the single-scope PR rule (Section 10.1) guarantees that each PR touches
+exactly
+one marketplace, all pipelines share a single reusable workflow that receives
+the
+**marketplace path as an input parameter**. There are no per-marketplace
+pipeline
+definitions. The pipeline determines the marketplace path by inspecting the
+changed
 files and extracting the common marketplace directory prefix.
 
 **Three separate pipelines, each triggered by a different event:**
@@ -2107,14 +2446,18 @@ files and extracting the common marketplace directory prefix.
 | **QA** | `push` to main (merge event) | Marketplace path from merged commit | Same quality checks as CI, re-run against the merged state. CODEOWNERS must approve QA results. |
 | **Tag and Release** | QA approval event | Marketplace path + semver | Creates `<marketplace-path>/<semver>` tag and publishes the release. |
 
-**CI and QA run the same quality checks.** The CI pipeline validates the PR branch, and
-the QA pipeline re-runs the identical checks against the merged commit on main. This
-ensures that merge conflicts or concurrent merges have not introduced regressions. Both
-pipelines call the same reusable validation workflow with the marketplace path as input.
+**CI and QA run the same quality checks.** The CI pipeline validates the PR
+branch, and
+the QA pipeline re-runs the identical checks against the merged commit on main.
+This
+ensures that merge conflicts or concurrent merges have not introduced
+regressions. Both
+pipelines call the same reusable validation workflow with the marketplace path
+as input.
 
 **Pipeline flow:**
 
-```
+```text
 1. Developer opens PR modifying a single marketplace directory
 2. CI pipeline detects marketplace path from changed files
 3. CI runs: scope check, validation, Claude CLI round-trip
@@ -2208,49 +2551,66 @@ jobs:
 
 ### Hard Constraints
 
-1. The `repo` tool is the ONLY mechanism for syncing marketplace content. No git clone, fetch,
+1. The `repo` tool is the ONLY mechanism for syncing marketplace content. No git
+   clone, fetch,
    checkout, or pull commands in the install script.
-2. The install script performs ZERO git operations. It operates on filesystem state only.
-3. `$HOME/.claude-marketplaces/` contains ONLY symlinks created by `<linkfile>`. Never real
+2. The install script performs ZERO git operations. It operates on filesystem
+   state only.
+3. `$HOME/.claude-marketplaces/` contains ONLY symlinks created by `<linkfile>`.
+   Never real
    directories.
-4. Each marketplace directory maps to exactly one `<project>` entry in the manifest.
-5. The plugin monorepo is checked out N times (once per needed marketplace). Each checkout is
+4. Each marketplace directory maps to exactly one `<project>` entry in the
+   manifest.
+5. The plugin monorepo is checked out N times (once per needed marketplace).
+   Each checkout is
    at a different tag.
-6. Git objects are shared across all checkouts of the same monorepo. This is automatic
+6. Git objects are shared across all checkouts of the same monorepo. This is
+   automatic
    (`repo` tool behavior, not a configuration option).
 
 ### Soft Constraints (Conventions)
 
-1. Marketplace symlinks live in `$HOME/.claude-marketplaces/` (outside the git project)
-2. Monorepo checkouts live in `.packages/<repo>-<flattened-marketplace-path>/` (inside the git project)
-3. Semantic tags follow `<marketplace-path>/<semver>` with hierarchy `/` separators
+1. Marketplace symlinks live in `$HOME/.claude-marketplaces/` (outside the git
+   project)
+2. Monorepo checkouts live in `.packages/<repo>-<flattened-marketplace-path>/`
+   (inside the git project)
+3. Semantic tags follow `<marketplace-path>/<semver>` with hierarchy `/`
+   separators
 4. Checkout paths and symlink names flatten the hierarchy with `-` separators
 5. Version constraints (Section 5.5) may be used in place of exact pins when the
    package or marketplace has comprehensive test coverage
-6. The install script is located at `.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py` (delivered by `repo sync` via `common/claude-marketplaces.xml`)
+6. The install script is located at
+   `.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py`
+   (delivered by `repo sync` via `common/claude-marketplaces.xml`)
 
 ### Invariants (Must Always Be True)
 
-1. For every symlink in `$HOME/.claude-marketplaces/`, there exists a corresponding
+1. For every symlink in `$HOME/.claude-marketplaces/`, there exists a
+   corresponding
    checkout in `.packages/`.
-2. For every monorepo checkout in `.packages/`, the `<linkfile>` src path (the hierarchy
+2. For every monorepo checkout in `.packages/`, the `<linkfile>` src path (the
+   hierarchy
    path to the marketplace directory) exists within it.
-3. The marketplace hierarchy path matches the tag prefix, which matches the `<linkfile> src`
+3. The marketplace hierarchy path matches the tag prefix, which matches the
+   `<linkfile> src`
    attribute.
 4. No two marketplace entries share the same absolute path.
 5. No two `<project>` entries share the same `path` attribute.
-6. Each `claude-marketplaces.xml` at a given hierarchy level includes the `claude-marketplaces.xml` from the
+6. Each `claude-marketplaces.xml` at a given hierarchy level includes the
+   `claude-marketplaces.xml` from the
    parent level, forming an unbroken inheritance chain from leaf to root.
 
 ---
 
 ## 12. Flow Diagram
 
-This diagram shows the two-phase process: `make rpmConfigure` syncs all packages and
-creates marketplace symlinks, then `install_claude_marketplaces.py` discovers and
+This diagram shows the two-phase process: `make rpmConfigure` syncs all packages
+and
+creates marketplace symlinks, then `install_claude_marketplaces.py` discovers
+and
 installs them.
 
-```
+```text
 ┌───────────────────────────────────────────────────────────────────────────────────────┐
 │  rpmConfigure (Make target, runs FIRST)                                               │
 ├───────────────────────────────────────────────────────────────────────────────────────┤
@@ -2339,20 +2699,25 @@ installs them.
 
 ### 13.1 Parallel Hierarchies
 
-The plugin monorepo hierarchy under `common/development/` and the RPM manifest `repo-specs/` hierarchy are
+The plugin monorepo hierarchy under `common/development/` and the RPM manifest
+`repo-specs/` hierarchy are
 **intentionally parallel**. Both follow the same
-`<runtime>/<build-tool>/<framework>/<architecture>` taxonomy. This means that for any
+`<runtime>/<build-tool>/<framework>/<architecture>` taxonomy. This means that
+for any
 given technology context, the build-tooling packages and the Claude Code plugin
 marketplaces are selected by the same hierarchy position.
 
 Build packages follow the **`rpm-<runtime>-<descriptive package name>`** naming
-convention. The descriptive name identifies the package's purpose (e.g., `rpm-python-uv`
+convention. The descriptive name identifies the package's purpose (e.g.,
+`rpm-python-uv`
 contains all Python/uv build tasks: linting, testing, typing, packaging). Plugin
-marketplaces may be **more granular**, with additional marketplaces at deeper hierarchy
+marketplaces may be **more granular**, with additional marketplaces at deeper
+hierarchy
 levels (framework, architecture).
 
 The naming convention aligns: a build package named `rpm-python-uv` mirrors the
-`common/development/python/uv/` hierarchy level where its correlated plugin marketplace `common/development/python/uv/quality-agent`
+`common/development/python/uv/` hierarchy level where its correlated plugin
+marketplace `common/development/python/uv/quality-agent`
 resides. Both are scoped to the same technology context.
 
 ### 13.2 Correlation Examples
@@ -2365,14 +2730,18 @@ resides. Both are scoped to the same technology context.
 | `rpm-node-npm` | `common/development/node/npm/express/express-patterns` | Same build package also establishes the Node/npm environment; express-patterns provides framework-specific patterns on top |
 | `rpm-dotnet-nuget` | `common/development/dotnet/nuget/quality-agent` | Build package provides all .NET/NuGet build tasks (Roslyn analyzers, xUnit testing, compilation); marketplace provides Claude Code agent skills for .NET code analysis |
 
-**Key pattern:** One build package (`rpm-<runtime>-<descriptive-name>`) correlates with
-one or more plugin marketplaces at the same OR deeper hierarchy levels. The build package
-provides the automated tooling; the correlated marketplaces provide Claude Code agent
+**Key pattern:** One build package (`rpm-<runtime>-<descriptive-name>`)
+correlates with
+one or more plugin marketplaces at the same OR deeper hierarchy levels. The
+build package
+provides the automated tooling; the correlated marketplaces provide Claude Code
+agent
 skills that understand and work with that tooling.
 
 ### 13.3 How Correlation Works in Practice
 
-Both `packages.xml` and `claude-marketplaces.xml` live at the same hierarchy level in the
+Both `packages.xml` and `claude-marketplaces.xml` live at the same hierarchy
+level in the
 manifest repository and are included by the same `meta.xml`:
 
 ```xml
@@ -2385,19 +2754,25 @@ manifest repository and are included by the same `meta.xml`:
 </manifest>
 ```
 
-A Python/uv/Django/Frontend project gets its build package AND plugin marketplaces
+A Python/uv/Django/Frontend project gets its build package AND plugin
+marketplaces
 tailored to that exact technology stack. Because `claude-marketplaces.xml` uses
-cascading `<include>` inheritance (see Section 5.2), the project automatically receives
-ALL marketplaces from its own level up through the root: universal plugins (`common/sdlc-tools`),
-Python-wide plugins (`common/development/python-commons`), Python+uv plugins (`common/development/quality-agent`), and
-Django-specific plugins (`common/development/django-helpers`). The Ruff linting config (from
+cascading `<include>` inheritance (see Section 5.2), the project automatically
+receives
+ALL marketplaces from its own level up through the root: universal plugins
+(`common/sdlc-tools`),
+Python-wide plugins (`common/development/python-commons`), Python+uv plugins
+(`common/development/quality-agent`), and
+Django-specific plugins (`common/development/django-helpers`). The Ruff linting
+config (from
 `rpm-python-uv`) and the Claude Code "fix Ruff violations" agent skill (from
-`common/development/python/uv/quality-agent`) are delivered together. The developer gets both the
+`common/development/python/uv/quality-agent`) are delivered together. The
+developer gets both the
 automated tooling AND the AI assistance that understands it.
 
 ### 13.4 Correlation Diagram
 
-```
+```text
 repo-specs/common/development/python/uv/django/frontend/
 │
 ├── packages.xml                                                     ← BUILD PACKAGE (grouped)
@@ -2431,31 +2806,40 @@ repo-specs/common/development/python/uv/django/frontend/
 
 ### 14.1 Isolation Model
 
-The devcontainer and host OS environments are **fully isolated**. There are no volume
-mounts between the host `~/.claude` or `~/.claude-marketplaces` and the container. Each
+The devcontainer and host OS environments are **fully isolated**. There are no
+volume
+mounts between the host `~/.claude` or `~/.claude-marketplaces` and the
+container. Each
 environment maintains its own:
 
 - `$HOME/.claude/`: Claude Code settings, plugin registry, conversation history
 - `$HOME/.claude-marketplaces/`: marketplace symlinks created by `repo sync`
 - `.packages/`: RPM-managed checkouts (within the project workspace)
 
-This means plugins installed inside the devcontainer do not appear on the host, and
+This means plugins installed inside the devcontainer do not appear on the host,
+and
 vice versa. Each environment runs the same scripts independently.
 
-**One project per devcontainer:** Each devcontainer instance serves exactly one project.
-The `$HOME/.claude-marketplaces/` directory inside the container is exclusively owned by
+**One project per devcontainer:** Each devcontainer instance serves exactly one
+project.
+The `$HOME/.claude-marketplaces/` directory inside the container is exclusively
+owned by
 that project's `rpmConfigure` run. There is no multi-project conflict within a
-devcontainer because each container is an isolated, single-project environment. This is
+devcontainer because each container is an isolated, single-project environment.
+This is
 the recommended development model.
 
 ### 14.2 Lifecycle Hook Integration
 
-Marketplace and plugin installation runs as part of the devcontainer `postCreateCommand`
-lifecycle hook chain. The `make rpmConfigure` target handles the entire process, from
-syncing RPM packages through registering marketplaces and installing plugins. The
+Marketplace and plugin installation runs as part of the devcontainer
+`postCreateCommand`
+lifecycle hook chain. The `make rpmConfigure` target handles the entire process,
+from
+syncing RPM packages through registering marketplaces and installing plugins.
+The
 current chain is:
 
-```
+```text
 postCreateCommand (devcontainer.json)
   └── postcreate-wrapper.sh
         └── .devcontainer.postcreate.sh
@@ -2473,25 +2857,30 @@ postCreateCommand (devcontainer.json)
 ```
 
 No separate script call is needed. The `make rpmConfigure` target (called by
-`project-setup.sh`) is the single entry point that syncs all RPM packages, creates
-marketplace symlinks via `<linkfile>`, and then runs `install_claude_marketplaces.py`
+`project-setup.sh`) is the single entry point that syncs all RPM packages,
+creates
+marketplace symlinks via `<linkfile>`, and then runs
+`install_claude_marketplaces.py`
 to register marketplaces and install plugins with the Claude CLI.
 
 ### 14.3 `.rpmenv` Configuration
 
-The `CLAUDE_MARKETPLACES_DIR` variable in `.rpmenv` uses `$HOME` which resolves correctly
+The `CLAUDE_MARKETPLACES_DIR` variable in `.rpmenv` uses `$HOME` which resolves
+correctly
 in both environments:
 
 ```properties
 CLAUDE_MARKETPLACES_DIR=${HOME}/.claude-marketplaces
 ```
 
-- **Inside devcontainer:** `$HOME` = `/home/vscode` → `/home/vscode/.claude-marketplaces`
-- **Outside devcontainer (host):** `$HOME` = `/home/<user>` → `/home/<user>/.claude-marketplaces`
+- **Inside devcontainer:** `$HOME` = `/home/vscode` →
+  `/home/vscode/.claude-marketplaces`
+- **Outside devcontainer (host):** `$HOME` = `/home/<user>` →
+  `/home/<user>/.claude-marketplaces`
 
 ### 14.4 Complete Devcontainer Setup Flow
 
-```
+```text
 1. Developer opens project in VS Code / devcontainer CLI
 
 2. Container builds from devcontainer.json
@@ -2516,30 +2905,45 @@ CLAUDE_MARKETPLACES_DIR=${HOME}/.claude-marketplaces
 
 ### 14.5 Multi-Project Considerations and `$HOME/.claude-marketplaces/` Ownership
 
-The `$HOME/.claude-marketplaces/` directory is a **shared, single-owner resource**.
-`rpmConfigure` performs a pre-sync cleanup (step 3 in Section 9.1) that removes all
-existing symlinks before creating fresh ones. This ensures the directory always reflects
+The `$HOME/.claude-marketplaces/` directory is a **shared, single-owner
+resource**.
+`rpmConfigure` performs a pre-sync cleanup (step 3 in Section 9.1) that removes
+all
+existing symlinks before creating fresh ones. This ensures the directory always
+reflects
 exactly one project's marketplace set with no stale or merged results.
 
-**DevContainer environment (recommended):** Each devcontainer has its own isolated
+**DevContainer environment (recommended):** Each devcontainer has its own
+isolated
 `$HOME`, so there is no conflict. One project per container means one owner of
 `$HOME/.claude-marketplaces/`. This is the recommended development model.
 
-**Bare-metal / host environment (known limitation):** When a developer works on multiple
-RPM-enabled projects on the same host (outside devcontainers), `$HOME/.claude-marketplaces/`
-is shared across all projects. Because `rpmConfigure` cleans the directory before syncing,
-running `make rpmConfigure` in Project B will remove Project A's marketplace symlinks
-and replace them with Project B's marketplaces. The developer's Claude Code plugin set
+**Bare-metal / host environment (known limitation):** When a developer works on
+multiple
+RPM-enabled projects on the same host (outside devcontainers),
+`$HOME/.claude-marketplaces/`
+is shared across all projects. Because `rpmConfigure` cleans the directory
+before syncing,
+running `make rpmConfigure` in Project B will remove Project A's marketplace
+symlinks
+and replace them with Project B's marketplaces. The developer's Claude Code
+plugin set
 will reflect whichever project ran `rpmConfigure` most recently.
 
-**Impact:** On bare metal, switching between RPM-enabled projects requires re-running
-`make rpmConfigure` in the target project to restore its marketplace set. Plugins from
+**Impact:** On bare metal, switching between RPM-enabled projects requires
+re-running
+`make rpmConfigure` in the target project to restore its marketplace set.
+Plugins from
 the previous project will no longer be registered (their symlinks were cleaned).
 
-**Mitigation:** Use devcontainers. Each devcontainer provides complete isolation of
-`$HOME`, `.packages/`, and the Claude Code plugin registry. Developers working on
-multiple RPM-enabled projects simultaneously SHOULD use separate devcontainers for each
-project. For developers who choose bare-metal development, this limitation MUST be
+**Mitigation:** Use devcontainers. Each devcontainer provides complete isolation
+of
+`$HOME`, `.packages/`, and the Claude Code plugin registry. Developers working
+on
+multiple RPM-enabled projects simultaneously SHOULD use separate devcontainers
+for each
+project. For developers who choose bare-metal development, this limitation MUST
+be
 documented in the project's developer guide with the instruction to run
 `make rpmConfigure` when switching projects.
 
@@ -2549,21 +2953,27 @@ documented in the project's developer guide with the instruction to run
 
 ### 15.1 Design Principle: One Set of Targets, Works Everywhere
 
-There is exactly **one `Makefile` with one set of targets** (`rpmConfigure`, `rpmClean`).
+There is exactly **one `Makefile` with one set of targets** (`rpmConfigure`,
+`rpmClean`).
 The developer runs `make rpmConfigure` and everything works, whether inside a
 devcontainer or on a bare host. The `rpmConfigure` target calls `rpmHostSetup`
-internally as its first step. `rpmHostSetup` is idempotent, so it is safe to run on
+internally as its first step. `rpmHostSetup` is idempotent, so it is safe to run
+on
 every invocation. The targets work identically in both environments because:
 
-- `.rpmenv` and `Makefile` live at the project root, which exists in both environments
-- The install script is delivered by `repo sync` at `.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py`
+- `.rpmenv` and `Makefile` live at the project root, which exists in both
+  environments
+- The install script is delivered by `repo sync` at
+  `.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py`
   (via `common/claude-marketplaces.xml`). Same path in both environments.
 - All runtime paths use `$HOME`, which resolves correctly in both environments
 - All tools (`repo`, `python3`, `claude`, `make`) are resolved via `$PATH`
 
 The only difference is **who calls `make rpmConfigure`**: in the devcontainer,
-`project-setup.sh` calls it automatically during the `postCreateCommand` lifecycle
-hook. Outside the devcontainer, the developer calls it manually. The target itself is
+`project-setup.sh` calls it automatically during the `postCreateCommand`
+lifecycle
+hook. Outside the devcontainer, the developer calls it manually. The target
+itself is
 identical. There is no separate setup step to remember.
 
 ### 15.2 Prerequisites
@@ -2590,7 +3000,7 @@ directory.
 These files exist in the repository and are identical whether working inside a
 devcontainer or on the host:
 
-```
+```text
 <project-root>/
 ├── .rpmenv                                         ← multi-source RPM configuration (RPM_SOURCES, RPM_SOURCE_<name>_*, etc.)
 ├── Makefile                                        ← rpmConfigure, rpmClean targets
@@ -2607,18 +3017,22 @@ devcontainer or on the host:
 └── ...
 ```
 
-The install script is delivered via `repo sync` as part of the `rpm-claude-marketplaces-install`
+The install script is delivered via `repo sync` as part of the
+`rpm-claude-marketplaces-install`
 RPM package (synced through `common/claude-marketplaces.xml`). It appears at
-`.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py` after sync.
-The `.rpmenv` file and `Makefile` are always at the project root. The developer does
+`.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py` after
+sync.
+The `.rpmenv` file and `Makefile` are always at the project root. The developer
+does
 NOT need to copy any of these files to `$HOME`.
 
 #### 15.3.2 Home Directory (created at runtime, per-user)
 
-These paths are created by `make rpmConfigure` (or `make rpmHostSetup` for first-time
+These paths are created by `make rpmConfigure` (or `make rpmHostSetup` for
+first-time
 host setup). They live under `$HOME` and are specific to each user:
 
-```
+```text
 $HOME/
 ├── .claude-marketplaces/                          ← symlinks created by repo sync <linkfile>
 │   ├── <monorepo>-<marketplace-a>/                   (points to <project>/.packages/<monorepo>-<marketplace-a>/)
@@ -2631,7 +3045,7 @@ $HOME/
 
 #### 15.3.3 Combined View: What the Host Developer Sees (non-DevContainer)
 
-```
+```text
 $HOME/                                              ← user home directory
 ├── .claude-marketplaces/                           ← symlinks into project .packages/
 │   └── <monorepo>-<marketplace>/  ──symlink──►       ~/projects/my-service/.packages/<monorepo>-<marketplace>/
@@ -2650,7 +3064,7 @@ $HOME/                                              ← user home directory
 
 #### 15.3.4 Combined View: What the DevContainer Developer Sees
 
-```
+```text
 /home/vscode/                                       ← $HOME inside devcontainer
 ├── .claude-marketplaces/                           ← symlinks into project .packages/
 │   └── <monorepo>-<marketplace>/  ──symlink──►       /workspaces/my-service/.packages/<monorepo>-<marketplace>/
@@ -2669,16 +3083,20 @@ $HOME/                                              ← user home directory
 ```
 
 The install script is delivered by `repo sync` at
-`.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py`. No copies
+`.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py`. No
+copies
 to `$HOME`, no PATH installation, no environment detection needed.
 
 ### 15.4 `rpmHostSetup` (Idempotent Prerequisite Target)
 
-The `rpmHostSetup` target validates prerequisites and prepares the environment. It is
-**idempotent**: every step uses create-if-not-exists or overwrite semantics, so running
+The `rpmHostSetup` target validates prerequisites and prepares the environment.
+It is
+**idempotent**: every step uses create-if-not-exists or overwrite semantics, so
+running
 it multiple times produces the same result as running it once.
 
-`rpmConfigure` calls `rpmHostSetup` as its first step. Developers never need to call
+`rpmConfigure` calls `rpmHostSetup` as its first step. Developers never need to
+call
 `rpmHostSetup` directly (though they can, since it is idempotent).
 
 The `rpmHostSetup` target MUST perform the following steps:
@@ -2689,11 +3107,16 @@ The `rpmHostSetup` target MUST perform the following steps:
 | 2 | Verify `repo` is on PATH | Yes (check only) | Fail fast with exit 127 if repo tool is not installed |
 | 3 | Verify `claude` is on PATH | Yes (check only) | Fail fast with exit 127 if Claude CLI is not installed |
 
-`rpmHostSetup` performs **only** prerequisite validation. It does NOT copy or stage the
-install script, and it does NOT create the `$HOME/.claude-marketplaces` directory (that
-is handled conditionally by `rpmConfigure` when `RPM_MARKETPLACE_INSTALL=true`). The
-install script is delivered by `repo sync` as part of the `rpm-claude-marketplaces-install`
-RPM package and is available at `.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py`
+`rpmHostSetup` performs **only** prerequisite validation. It does NOT copy or
+stage the
+install script, and it does NOT create the `$HOME/.claude-marketplaces`
+directory (that
+is handled conditionally by `rpmConfigure` when `RPM_MARKETPLACE_INSTALL=true`).
+The
+install script is delivered by `repo sync` as part of the
+`rpm-claude-marketplaces-install`
+RPM package and is available at
+`.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py`
 after sync completes (see Section 9.1, step 8).
 
 If any prerequisite check fails, the target MUST exit with a non-zero code and a
@@ -2708,34 +3131,47 @@ cd <project-root>
 make rpmConfigure
 ```
 
-This is the only command a developer needs to remember. The `rpmConfigure` target
-sources `.rpmenv` internally and calls `rpmHostSetup` before doing anything else.
+This is the only command a developer needs to remember. The `rpmConfigure`
+target
+sources `.rpmenv` internally and calls `rpmHostSetup` before doing anything
+else.
 The developer does not need to source `.rpmenv` manually or run `rpmHostSetup`
 separately.
 
 The full sequence (matching Section 9.1):
 
 1. `make rpmHostSetup` (idempotent prerequisite checks)
-2. `source .rpmenv` (loads `RPM_SOURCES`, `RPM_SOURCE_<name>_*`, `CLAUDE_MARKETPLACES_DIR`, `RPM_MARKETPLACE_INSTALL`, etc.)
-3. Validate sources (verify all required `RPM_SOURCE_<name>_URL/REVISION/PATH` vars exist)
-4. If `RPM_MARKETPLACE_INSTALL=true`: `mkdir -p` + pre-sync marketplace cleanup (`rm -rf ${CLAUDE_MARKETPLACES_DIR}/*`)
-5. For each source in `RPM_SOURCES`: `repo init` → `repo envsubst` → `repo sync` (per-source in `.rpm/sources/<name>/`)
-6. Aggregate: symlink `.rpm/sources/<name>/.packages/*` into `.packages/` (collision check)
+2. `source .rpmenv` (loads `RPM_SOURCES`, `RPM_SOURCE_<name>_*`,
+   `CLAUDE_MARKETPLACES_DIR`, `RPM_MARKETPLACE_INSTALL`, etc.)
+3. Validate sources (verify all required `RPM_SOURCE_<name>_URL/REVISION/PATH`
+   vars exist)
+4. If `RPM_MARKETPLACE_INSTALL=true`: `mkdir -p` + pre-sync marketplace cleanup
+   (`rm -rf ${CLAUDE_MARKETPLACES_DIR}/*`)
+5. For each source in `RPM_SOURCES`: `repo init` → `repo envsubst` → `repo sync`
+   (per-source in `.rpm/sources/<name>/`)
+6. Aggregate: symlink `.rpm/sources/<name>/.packages/*` into `.packages/`
+   (collision check)
 7. `.gitignore` updated with `.packages/`, `.rpm/`
-8. If `RPM_MARKETPLACE_INSTALL=true`: run `.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py`
+8. If `RPM_MARKETPLACE_INSTALL=true`: run
+   `.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py`
 
 ### 15.6 Script Portability
 
-The `install_claude_marketplaces.py` script is delivered via the `rpm-claude-marketplaces-install`
+The `install_claude_marketplaces.py` script is delivered via the
+`rpm-claude-marketplaces-install`
 RPM package (synced through `common/claude-marketplaces.xml`). It lives at
-`.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py` after sync.
-The script works identically in both devcontainer and host environments because it:
+`.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py` after
+sync.
+The script works identically in both devcontainer and host environments because
+it:
 
 1. **Uses `$HOME` for marketplace discovery**: resolves to `/home/vscode` in the
    devcontainer and to the user's home directory on the host
-2. **Locates `claude` via `shutil.which`**: works whether Claude is installed system-wide
+2. **Locates `claude` via `shutil.which`**: works whether Claude is installed
+   system-wide
    or via nvm/volta/etc.
-3. **Uses Python stdlib only**: `logging`, `subprocess`, `pathlib`, `json`, `shutil`
+3. **Uses Python stdlib only**: `logging`, `subprocess`, `pathlib`, `json`,
+   `shutil`
 4. **Performs no docker/container-specific operations**: pure filesystem and CLI
    commands
 5. **Requires no special permissions**: runs as the current user
@@ -2753,15 +3189,22 @@ The script works identically in both devcontainer and host environments because 
 | Build packages | `.packages/<build-packages>/` | `.packages/<build-packages>/` | Yes (same path) |
 | Monorepo checkouts | `.packages/<monorepo>-<marketplace>/` | `.packages/<monorepo>-<marketplace>/` | Yes (same path) |
 
-The developer runs **one command**: `make rpmConfigure`. This calls `rpmHostSetup`
+The developer runs **one command**: `make rpmConfigure`. This calls
+`rpmHostSetup`
 internally (idempotent, safe to run every time). The install script is always at
-`.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py` (delivered
-by `repo sync`). All paths are identical in both environments. `$HOME` is the only
-runtime variable, and the operating system resolves it correctly in both environments.
+`.packages/rpm-claude-marketplaces-install/install_claude_marketplaces.py`
+(delivered
+by `repo sync`). All paths are identical in both environments. `$HOME` is the
+only
+runtime variable, and the operating system resolves it correctly in both
+environments.
 
-The two environments are **fully isolated**. Plugins installed inside the devcontainer
-do not appear on the host, and vice versa. Both environments use the same Make targets,
-the same scripts, and the same `$HOME`-relative paths, but their state is independent.
+The two environments are **fully isolated**. Plugins installed inside the
+devcontainer
+do not appear on the host, and vice versa. Both environments use the same Make
+targets,
+the same scripts, and the same `$HOME`-relative paths, but their state is
+independent.
 
 ### 15.8 Cleanup
 
@@ -2776,15 +3219,20 @@ make rpmClean
 
 The following are explicitly out of scope and must be defined separately:
 
-- The internal structure of individual Claude Code plugins (beyond requiring valid metadata)
+- The internal structure of individual Claude Code plugins (beyond requiring
+  valid metadata)
 - The specific marketplaces to include in any given technology context
-- The CI/CD pipeline implementation details for the plugin monorepo (beyond the governance
+- The CI/CD pipeline implementation details for the plugin monorepo (beyond the
+  governance
   model described in Section 10.2)
 - The Claude Code plugin format specification (owned by Anthropic)
-- Plugin uninstallation edge cases (bulk uninstall is handled by `make rpmClean`)
-- Multi-monorepo support details (the architecture supports it via `<repo-name>` prefix,
+- Plugin uninstallation edge cases (bulk uninstall is handled by `make
+  rpmClean`)
+- Multi-monorepo support details (the architecture supports it via `<repo-name>`
+  prefix,
   but specific manifest configuration is project-specific)
-- Host OS package manager prerequisites (runtime, build tool, repo tool installation)
+- Host OS package manager prerequisites (runtime, build tool, repo tool
+  installation)
 - IDE-specific configuration beyond VS Code devcontainers
 
 ---
@@ -2795,11 +3243,13 @@ This specification depends on two features that MUST be added to the Caylent
 `repo` fork (`caylent-solutions/git-repo`) and released as tag `caylent-2.0.0`
 (major bump due to breaking validation changes).
 
-> **Implementation note:** Sections 17.1-17.4 describe **design requirements**, not
+> **Implementation note:** Sections 17.1-17.4 describe **design requirements**,
+not
 > step-by-step implementation instructions. The implementing agent MUST read the
 > `git-repo` fork source code to understand current function signatures, class
 > hierarchies, and test patterns before making changes. The file names, function
-> names, and integration points below are guidance based on the upstream codebase
+> names, and integration points below are guidance based on the upstream
+codebase
 > structure — the agent should verify these against the actual fork and adapt as
 > needed. The acceptance criteria (what the code must DO) are authoritative; the
 > suggested approach (HOW to implement) is advisory.
@@ -2834,7 +3284,8 @@ This specification depends on two features that MUST be added to the Caylent
 
 1. Before `rem.ToLocal()`, check `is_version_constraint(self.revisionExpr)`
 2. If true, call `_ResolveVersionConstraint()` which:
-   a. Collects tag names from `all_refs` (local) or `_LsRemote("refs/tags/*")` (remote)
+      a. Collects tag names from `all_refs` (local) or
+   `_LsRemote("refs/tags/*")` (remote)
    b. Calls `resolve_version_constraint()` to find best match
    c. Returns the resolved tag name
 3. Use the resolved tag as the revision expression for normal checkout flow
@@ -2856,14 +3307,16 @@ The fork MUST NOT break:
 
 ### 17.4 Release
 
-After both features are implemented and all tests pass (289+ existing tests plus new
+After both features are implemented and all tests pass (289+ existing tests plus
+new
 tests for both features), tag the fork as `caylent-2.0.0`.
 
 ---
 
 ## 18. Repository Inventory
 
-The complete RPM ecosystem consists of four repositories under `caylent-solutions`:
+The complete RPM ecosystem consists of four repositories under
+`caylent-solutions`:
 
 | Repository | Visibility | License | Purpose | Default Branch |
 |---|---|---|---|---|
@@ -2876,8 +3329,10 @@ The complete RPM ecosystem consists of four repositories under `caylent-solution
 - Squash merge: allowed
 - Merge commit: disabled
 - Rebase merge: disabled
-- Branch ruleset on `main`: active, requires PR with 1 approving review, code owner
-  review, last push approval, resolved threads, squash merge only, linear history,
+- Branch ruleset on `main`: active, requires PR with 1 approving review, code
+  owner
+    review, last push approval, resolved threads, squash merge only, linear
+  history,
   no deletion, no non-fast-forward
 
 ---
@@ -2886,28 +3341,34 @@ The complete RPM ecosystem consists of four repositories under `caylent-solution
 
 ### 19.1 Example Hierarchy in `caylent-private-rpm`
 
-The `repo-specs/` directory in `caylent-private-rpm` contains an example demonstrating
+The `repo-specs/` directory in `caylent-private-rpm` contains an example
+demonstrating
 7 levels of cascading marketplace inheritance through the path:
 
-```
+```text
 common → example → development → python → make → argparse → cli
 ```
 
-This uses the existing `<include>` directive of the `repo` tool (not a Claude-specific
-feature). Any manifest at any depth can include any other manifest by its full path —
+This uses the existing `<include>` directive of the `repo` tool (not a
+Claude-specific
+feature). Any manifest at any depth can include any other manifest by its full
+path —
 cascading parent-child is a convention, not a requirement.
 
-**Note on example vs. production paths:** The example hierarchy uses `common/example/`
+**Note on example vs. production paths:** The example hierarchy uses
+`common/example/`
 as the second level, not `common/development/` as used in production. This is
 intentional — it demonstrates that the `flattening_strip_prefixes` algorithm
-(`["common", "development"]`) only strips matching prefixes. Since `example` does not
+(`["common", "development"]`) only strips matching prefixes. Since `example`
+does not
 match `development`, it is retained in flattened names (e.g.,
-`rpm-claude-marketplaces-example-example-tools`). This validates that the stripping
+`rpm-claude-marketplaces-example-example-tools`). This validates that the
+stripping
 logic is prefix-specific, not position-based.
 
 **Full manifest hierarchy:**
 
-```
+```text
 repo-specs/
 ├── git-connection/remote.xml                                              [EXISTS]
 └── common/
@@ -2941,8 +3402,10 @@ repo-specs/
 </manifest>
 ```
 
-This root manifest includes the install tool package. Every manifest that includes
-this (directly or through cascading inheritance) automatically receives the install
+This root manifest includes the install tool package. Every manifest that
+includes
+this (directly or through cascading inheritance) automatically receives the
+install
 tool. No marketplace `<project>` entries exist at this level because this is
 the real root, not an example — only the install tool is universal.
 
@@ -2967,10 +3430,11 @@ the real root, not an example — only the install tool is universal.
 
 Dummy marketplaces at each level demonstrating cascading inheritance:
 
-Each marketplace contains `.claude-plugin/marketplace.json` and one or more plugin
+Each marketplace contains `.claude-plugin/marketplace.json` and one or more
+plugin
 subdirectories, each with `.claude-plugin/plugin.json` (per Section 4.2.2):
 
-```
+```text
 common/
 └── example/
     ├── example-tools/                                    ← marketplace at example root
@@ -3004,10 +3468,12 @@ common/
                             └── agent-plugin/.claude-plugin/plugin.json
 ```
 
-All `marketplace.json` and `plugin.json` files are trivial dummies for validation
+All `marketplace.json` and `plugin.json` files are trivial dummies for
+validation
 purposes. Each marketplace has exactly one plugin for simplicity. This structure
 validates:
-- 6 levels of cascading inheritance (a `cli/` project inherits all 6 marketplaces
+- 6 levels of cascading inheritance (a `cli/` project inherits all 6
+  marketplaces
   plus the install tool from the root)
 - Path flattening at each level
 - `<linkfile>` symlink creation with `${CLAUDE_MARKETPLACES_DIR}`
@@ -3018,9 +3484,10 @@ validates:
 
 One tag per marketplace in `rpm-claude-marketplaces`:
 
-Tags strip the `marketplace_root` prefix (`common`), matching Section 4.4 convention:
+Tags strip the `marketplace_root` prefix (`common`), matching Section 4.4
+convention:
 
-```
+```text
 example/example-tools/1.0.0
 example/development/dev-lint/1.0.0
 example/development/python/python-helpers/1.0.0
@@ -3078,7 +3545,8 @@ cascading `<include>` inheritance.
 
 ## 20. Implementation Order
 
-The repositories MUST be implemented in the following order. Dependencies between
+The repositories MUST be implemented in the following order. Dependencies
+between
 repos dictate this sequence:
 
 | Order | Repo | Work | Depends On |
@@ -3091,8 +3559,10 @@ repos dictate this sequence:
 
 **Why this order:**
 - Fork features are needed by manifests (git-repo first)
-- Install tool is synced by manifests (rpm-claude-marketplaces-install before caylent-private-rpm)
-- Monorepo tags are referenced by manifests (rpm-claude-marketplaces before caylent-private-rpm)
+- Install tool is synced by manifests (rpm-claude-marketplaces-install before
+  caylent-private-rpm)
+- Monorepo tags are referenced by manifests (rpm-claude-marketplaces before
+  caylent-private-rpm)
 
 ### 20.1 `caylent-private-rpm` Detailed Work Items
 

@@ -34,9 +34,7 @@ class Prune(PagedCommand):
         return project.PruneHeads()
 
     def Execute(self, opt, args):
-        projects = self.GetProjects(
-            args, all_manifests=not opt.this_manifest_only
-        )
+        projects = self.GetProjects(args, all_manifests=not opt.this_manifest_only)
 
         # NB: Should be able to refactor this module to display summary as
         # results come back from children.
@@ -71,10 +69,7 @@ class Prune(PagedCommand):
             if project != branch.project:
                 project = branch.project
                 out.nl()
-                out.project(
-                    "project %s/"
-                    % project.RelPath(local=opt.this_manifest_only)
-                )
+                out.project("project %s/" % project.RelPath(local=opt.this_manifest_only))
                 out.nl()
 
             print(
@@ -91,7 +86,4 @@ class Prune(PagedCommand):
             else:
                 commits = branch.commits
                 date = branch.date
-                print(
-                    "(%2d commit%s, %s)"
-                    % (len(commits), len(commits) != 1 and "s" or " ", date)
-                )
+                print("(%2d commit%s, %s)" % (len(commits), len(commits) != 1 and "s" or " ", date))

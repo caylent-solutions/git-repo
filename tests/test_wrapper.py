@@ -49,9 +49,7 @@ class RepoWrapperUnitTest(RepoWrapperTestCase):
         """Make sure _Version works."""
         with self.assertRaises(SystemExit) as e:
             with mock.patch("sys.stdout", new_callable=io.StringIO) as stdout:
-                with mock.patch(
-                    "sys.stderr", new_callable=io.StringIO
-                ) as stderr:
+                with mock.patch("sys.stderr", new_callable=io.StringIO) as stderr:
                     self.wrapper._Version()
         self.assertEqual(0, e.exception.code)
         self.assertEqual("", stderr.getvalue())
@@ -59,12 +57,8 @@ class RepoWrapperUnitTest(RepoWrapperTestCase):
 
     def test_python_constraints(self):
         """The launcher should never require newer than main.py."""
-        self.assertGreaterEqual(
-            main.MIN_PYTHON_VERSION_HARD, self.wrapper.MIN_PYTHON_VERSION_HARD
-        )
-        self.assertGreaterEqual(
-            main.MIN_PYTHON_VERSION_SOFT, self.wrapper.MIN_PYTHON_VERSION_SOFT
-        )
+        self.assertGreaterEqual(main.MIN_PYTHON_VERSION_HARD, self.wrapper.MIN_PYTHON_VERSION_HARD)
+        self.assertGreaterEqual(main.MIN_PYTHON_VERSION_SOFT, self.wrapper.MIN_PYTHON_VERSION_SOFT)
         # Make sure the versions are themselves in sync.
         self.assertGreaterEqual(
             self.wrapper.MIN_PYTHON_VERSION_SOFT,
@@ -168,9 +162,7 @@ class ParseGitVersion(RepoWrapperTestCase):
 
     def test_extended_ver(self):
         """Check handling of extended distro git versions."""
-        ret = self.wrapper.ParseGitVersion(
-            ver_str="git version 1.30.50.696.g5e7596f4ac-goog"
-        )
+        ret = self.wrapper.ParseGitVersion(ver_str="git version 1.30.50.696.g5e7596f4ac-goog")
         self.assertEqual(1, ret.major)
         self.assertEqual(30, ret.minor)
         self.assertEqual(50, ret.micro)
@@ -182,9 +174,7 @@ class CheckGitVersion(RepoWrapperTestCase):
 
     def test_unknown(self):
         """Unknown versions should abort."""
-        with mock.patch.object(
-            self.wrapper, "ParseGitVersion", return_value=None
-        ):
+        with mock.patch.object(self.wrapper, "ParseGitVersion", return_value=None):
             with self.assertRaises(self.wrapper.CloneFailure):
                 self.wrapper._CheckGitVersion()
 
@@ -215,11 +205,7 @@ class Requirements(RepoWrapperTestCase):
         """Don't crash if the file is missing (old version)."""
         testdir = os.path.dirname(os.path.realpath(__file__))
         self.assertIsNone(self.wrapper.Requirements.from_dir(testdir))
-        self.assertIsNone(
-            self.wrapper.Requirements.from_file(
-                os.path.join(testdir, "xxxxxxxxxxxxxxxxxxxxxxxx")
-            )
-        )
+        self.assertIsNone(self.wrapper.Requirements.from_file(os.path.join(testdir, "xxxxxxxxxxxxxxxxxxxxxxxx")))
 
     def test_corrupt_data(self):
         """If the file can't be parsed, don't blow up."""
@@ -231,17 +217,11 @@ class Requirements(RepoWrapperTestCase):
         self.assertIsNotNone(self.wrapper.Requirements.from_data(b"{}"))
         rootdir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         self.assertIsNotNone(self.wrapper.Requirements.from_dir(rootdir))
-        self.assertIsNotNone(
-            self.wrapper.Requirements.from_file(
-                os.path.join(rootdir, "requirements.json")
-            )
-        )
+        self.assertIsNotNone(self.wrapper.Requirements.from_file(os.path.join(rootdir, "requirements.json")))
 
     def test_format_ver(self):
         """Check format_ver can format."""
-        self.assertEqual(
-            "1.2.3", self.wrapper.Requirements._format_ver((1, 2, 3))
-        )
+        self.assertEqual("1.2.3", self.wrapper.Requirements._format_ver((1, 2, 3)))
         self.assertEqual("1", self.wrapper.Requirements._format_ver([1]))
 
     def test_assert_all_unknown(self):
@@ -278,9 +258,7 @@ class Requirements(RepoWrapperTestCase):
 
     def test_assert_ver_new(self):
         """Check assert_ver allows new enough versions."""
-        reqs = self.wrapper.Requirements(
-            {"git": {"hard": [1, 0], "soft": [2, 0]}}
-        )
+        reqs = self.wrapper.Requirements({"git": {"hard": [1, 0], "soft": [2, 0]}})
         reqs.assert_ver("git", (1, 0))
         reqs.assert_ver("git", (1, 5))
         reqs.assert_ver("git", (2, 0))
@@ -288,9 +266,7 @@ class Requirements(RepoWrapperTestCase):
 
     def test_assert_ver_old(self):
         """Check assert_ver rejects old versions."""
-        reqs = self.wrapper.Requirements(
-            {"git": {"hard": [1, 0], "soft": [2, 0]}}
-        )
+        reqs = self.wrapper.Requirements({"git": {"hard": [1, 0], "soft": [2, 0]}})
         with self.assertRaises(SystemExit):
             reqs.assert_ver("git", (0, 5))
 
@@ -342,9 +318,7 @@ class SetupGnuPG(RepoWrapperTestCase):
         """Make sure it works completely."""
         with tempfile.TemporaryDirectory(prefix="repo-tests") as tempdir:
             self.wrapper.home_dot_repo = tempdir
-            self.wrapper.gpg_dir = os.path.join(
-                self.wrapper.home_dot_repo, "gnupg"
-            )
+            self.wrapper.gpg_dir = os.path.join(self.wrapper.home_dot_repo, "gnupg")
             self.assertTrue(self.wrapper.SetupGnuPG(True))
             with open(os.path.join(tempdir, "keyring-version")) as fp:
                 data = fp.read()
@@ -361,33 +335,23 @@ class VerifyRev(RepoWrapperTestCase):
         """Check when we have a valid signed tag."""
         desc_result = subprocess.CompletedProcess([], 0, "v1.0\n", "")
         gpg_result = subprocess.CompletedProcess([], 0, "", "")
-        with mock.patch.object(
-            self.wrapper, "run_git", side_effect=(desc_result, gpg_result)
-        ):
-            ret = self.wrapper.verify_rev(
-                "/", "refs/heads/stable", "1234", True
-            )
+        with mock.patch.object(self.wrapper, "run_git", side_effect=(desc_result, gpg_result)):
+            ret = self.wrapper.verify_rev("/", "refs/heads/stable", "1234", True)
             self.assertEqual("v1.0^0", ret)
 
     def test_unsigned_commit(self):
         """Check we fall back to signed tag when we have an unsigned commit."""
         desc_result = subprocess.CompletedProcess([], 0, "v1.0-10-g1234\n", "")
         gpg_result = subprocess.CompletedProcess([], 0, "", "")
-        with mock.patch.object(
-            self.wrapper, "run_git", side_effect=(desc_result, gpg_result)
-        ):
-            ret = self.wrapper.verify_rev(
-                "/", "refs/heads/stable", "1234", True
-            )
+        with mock.patch.object(self.wrapper, "run_git", side_effect=(desc_result, gpg_result)):
+            ret = self.wrapper.verify_rev("/", "refs/heads/stable", "1234", True)
             self.assertEqual("v1.0^0", ret)
 
     def test_verify_fails(self):
         """Check we fall back to signed tag when we have an unsigned commit."""
         desc_result = subprocess.CompletedProcess([], 0, "v1.0-10-g1234\n", "")
         gpg_result = Exception
-        with mock.patch.object(
-            self.wrapper, "run_git", side_effect=(desc_result, gpg_result)
-        ):
+        with mock.patch.object(self.wrapper, "run_git", side_effect=(desc_result, gpg_result)):
             with self.assertRaises(Exception):
                 self.wrapper.verify_rev("/", "refs/heads/stable", "1234", True)
 
@@ -424,9 +388,7 @@ class GitCheckoutTestCase(RepoWrapperTestCase):
         run_git("branch", "stable", cwd=remote)
         run_git("tag", "v1.0", cwd=remote)
         run_git("commit", "--allow-empty", "-m2nd commit", cwd=remote)
-        cls.REV_LIST = run_git(
-            "rev-list", "HEAD", cwd=remote
-        ).stdout.splitlines()
+        cls.REV_LIST = run_git("rev-list", "HEAD", cwd=remote).stdout.splitlines()
 
         run_git("init", cwd=cls.GIT_DIR)
         run_git(
@@ -449,9 +411,7 @@ class ResolveRepoRev(GitCheckoutTestCase):
 
     def test_explicit_branch(self):
         """Check refs/heads/branch argument."""
-        rrev, lrev = self.wrapper.resolve_repo_rev(
-            self.GIT_DIR, "refs/heads/stable"
-        )
+        rrev, lrev = self.wrapper.resolve_repo_rev(self.GIT_DIR, "refs/heads/stable")
         self.assertEqual("refs/heads/stable", rrev)
         self.assertEqual(self.REV_LIST[1], lrev)
 
@@ -460,9 +420,7 @@ class ResolveRepoRev(GitCheckoutTestCase):
 
     def test_explicit_tag(self):
         """Check refs/tags/tag argument."""
-        rrev, lrev = self.wrapper.resolve_repo_rev(
-            self.GIT_DIR, "refs/tags/v1.0"
-        )
+        rrev, lrev = self.wrapper.resolve_repo_rev(self.GIT_DIR, "refs/tags/v1.0")
         self.assertEqual("refs/tags/v1.0", rrev)
         self.assertEqual(self.REV_LIST[1], lrev)
 
@@ -514,16 +472,12 @@ class CheckRepoVerify(RepoWrapperTestCase):
 
     def test_gpg_initialized(self):
         """Should pass if gpg is setup already."""
-        with mock.patch.object(
-            self.wrapper, "NeedSetupGnuPG", return_value=False
-        ):
+        with mock.patch.object(self.wrapper, "NeedSetupGnuPG", return_value=False):
             self.assertTrue(self.wrapper.check_repo_verify(True))
 
     def test_need_gpg_setup(self):
         """Should pass/fail based on gpg setup."""
-        with mock.patch.object(
-            self.wrapper, "NeedSetupGnuPG", return_value=True
-        ):
+        with mock.patch.object(self.wrapper, "NeedSetupGnuPG", return_value=True):
             with mock.patch.object(self.wrapper, "SetupGnuPG") as m:
                 m.return_value = True
                 self.assertTrue(self.wrapper.check_repo_verify(True))
@@ -537,34 +491,22 @@ class CheckRepoRev(GitCheckoutTestCase):
 
     def test_verify_works(self):
         """Should pass when verification passes."""
-        with mock.patch.object(
-            self.wrapper, "check_repo_verify", return_value=True
-        ):
-            with mock.patch.object(
-                self.wrapper, "verify_rev", return_value="12345"
-            ):
+        with mock.patch.object(self.wrapper, "check_repo_verify", return_value=True):
+            with mock.patch.object(self.wrapper, "verify_rev", return_value="12345"):
                 rrev, lrev = self.wrapper.check_repo_rev(self.GIT_DIR, "stable")
         self.assertEqual("refs/heads/stable", rrev)
         self.assertEqual("12345", lrev)
 
     def test_verify_fails(self):
         """Should fail when verification fails."""
-        with mock.patch.object(
-            self.wrapper, "check_repo_verify", return_value=True
-        ):
-            with mock.patch.object(
-                self.wrapper, "verify_rev", side_effect=Exception
-            ):
+        with mock.patch.object(self.wrapper, "check_repo_verify", return_value=True):
+            with mock.patch.object(self.wrapper, "verify_rev", side_effect=Exception):
                 with self.assertRaises(Exception):
                     self.wrapper.check_repo_rev(self.GIT_DIR, "stable")
 
     def test_verify_ignore(self):
         """Should pass when verification is disabled."""
-        with mock.patch.object(
-            self.wrapper, "verify_rev", side_effect=Exception
-        ):
-            rrev, lrev = self.wrapper.check_repo_rev(
-                self.GIT_DIR, "stable", repo_verify=False
-            )
+        with mock.patch.object(self.wrapper, "verify_rev", side_effect=Exception):
+            rrev, lrev = self.wrapper.check_repo_rev(self.GIT_DIR, "stable", repo_verify=False)
         self.assertEqual("refs/heads/stable", rrev)
         self.assertEqual(self.REV_LIST[1], lrev)

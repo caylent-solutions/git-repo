@@ -285,9 +285,7 @@ contain a line that matches both expressions:
         return ExecuteOneResult(project_idx, rc, p.stdout, p.stderr, error)
 
     @staticmethod
-    def _ProcessResults(
-        full_name, have_rev, opt, projects, _pool, out, results
-    ):
+    def _ProcessResults(full_name, have_rev, opt, projects, _pool, out, results):
         git_failed = False
         bad_rev = False
         have_match = False
@@ -308,10 +306,7 @@ contain a line that matches both expressions:
             if result.rc:
                 # no results
                 if result.stderr:
-                    if (
-                        have_rev
-                        and "fatal: ambiguous argument" in result.stderr
-                    ):
+                    if have_rev and "fatal: ambiguous argument" in result.stderr:
                         bad_rev = True
                     else:
                         out.project("--- project %s ---" % _RelPath(project))
@@ -363,9 +358,7 @@ contain a line that matches both expressions:
             cmd_argv.append(args[0])
             args = args[1:]
 
-        projects = self.GetProjects(
-            args, all_manifests=not opt.this_manifest_only
-        )
+        projects = self.GetProjects(args, all_manifests=not opt.this_manifest_only)
 
         full_name = False
         if len(projects) > 1:
@@ -388,18 +381,14 @@ contain a line that matches both expressions:
                 opt.jobs,
                 functools.partial(self._ExecuteOne, cmd_argv),
                 range(len(projects)),
-                callback=functools.partial(
-                    self._ProcessResults, full_name, have_rev, opt, projects
-                ),
+                callback=functools.partial(self._ProcessResults, full_name, have_rev, opt, projects),
                 output=out,
                 ordered=True,
                 chunksize=1,
             )
 
         if git_failed:
-            raise GrepCommandError(
-                "error: git failures", aggregate_errors=errors
-            )
+            raise GrepCommandError("error: git failures", aggregate_errors=errors)
         elif have_match:
             sys.exit(0)
         elif have_rev and bad_rev:

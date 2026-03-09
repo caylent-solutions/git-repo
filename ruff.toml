@@ -1,0 +1,47 @@
+# Ruff configuration for git-repo (Caylent fork of Google repo tool)
+# This is a large upstream codebase; configuration is tuned to avoid
+# false positives on upstream patterns while catching issues in new code.
+
+target-version = "py37"
+line-length = 120
+
+# Exclude upstream vendored and generated files.
+# Upstream core files are excluded from format checks because reformatting
+# the entire upstream codebase is outside the scope of Caylent work.
+extend-exclude = [
+    ".devcontainer/fix-line-endings.py",
+    # Test fixtures contain intentionally bad code for linter validation
+    "tests/fixtures/",
+    # Upstream files excluded from formatting — reformatting upstream code
+    # would produce a massive diff unrelated to Caylent changes
+    "git_command.py",
+    "git_trace2_event_log_base.py",
+    "main.py",
+    "manifest_xml.py",
+    "project.py",
+    "release/",
+    "subcmds/forall.py",
+    "subcmds/init.py",
+    "subcmds/manifest.py",
+    "subcmds/sync.py",
+    # Upstream test files — formatting changes would be unrelated to Caylent work
+    "tests/test_manifest_xml.py",
+]
+
+[lint]
+# Enable pyflakes (F) and pycodestyle error (E) rules by default.
+# E731 is excluded because the upstream codebase uses lambda assignments
+# extensively and changing them is outside the scope of Caylent work.
+select = ["F", "E"]
+ignore = [
+    # Lambda assignment — prevalent in upstream code (10+ instances)
+    "E731",
+    # Line too long — upstream code has many lines over 80 chars;
+    # enforcing this would require reformatting the entire upstream codebase
+    "E501",
+]
+
+[format]
+# Match existing upstream style (Google style uses 4-space indent)
+indent-style = "space"
+quote-style = "double"

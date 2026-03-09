@@ -2,14 +2,14 @@
 
 Here's a short overview of the process.
 
-*   Make small logical changes.
-*   [Provide a meaningful commit message][commit-message-style].
-*   Make sure all code is under the Apache License, 2.0.
-*   Publish your changes for review.
-    *   `git push origin HEAD:refs/for/main`
-*   Make corrections if requested.
-*   [Verify your changes on Gerrit.](#verify)
-*   [Send to the commit queue for testing & merging.](#cq)
+* Make small logical changes.
+* [Provide a meaningful commit message][commit-message-style].
+* Make sure all code is under the Apache License, 2.0.
+* Publish your changes for review.
+  * `git push origin HEAD:refs/for/main`
+* Make corrections if requested.
+* [Verify your changes on Gerrit.](#verify)
+* [Send to the commit queue for testing & merging.](#cq)
 
 [TOC]
 
@@ -23,8 +23,7 @@ patch submission guidelines for the Linux kernel.
 However there are some differences, so please review and familiarize
 yourself with the following relevant bits.
 
-
-## Make separate commits for logically separate changes.
+## Make separate commits for logically separate changes
 
 Unless your patch is really trivial, you should not be sending out a patch that
 was generated between your working tree and your commit head.
@@ -38,22 +37,24 @@ Describe the technical detail of the change(s).
 If your description starts to get too long, that's a sign that you
 probably need to split up your commit to finer grained pieces.
 
-
 ## Linting and formatting code
 
 Lint any changes by running:
+
 ```sh
-$ tox -e lint -- file.py
+tox -e lint -- file.py
 ```
 
 And format with:
+
 ```sh
-$ tox -e format -- file.py
+tox -e format -- file.py
 ```
 
 Or format everything:
+
 ```sh
-$ tox -e format
+tox -e format
 ```
 
 Repo uses [black](https://black.readthedocs.io/) with line length of 80 as its
@@ -79,11 +80,13 @@ We use [pytest](https://pytest.org/) and [tox](https://tox.readthedocs.io/) for
 running tests.  You should make sure to install those first.
 
 To run the full suite against all supported Python versions, simply execute:
+
 ```sh
-$ tox -p auto
+tox -p auto
 ```
 
 We have [`./run_tests`](./run_tests) which is a simple wrapper around `pytest`:
+
 ```sh
 # Run the full suite against the default Python version.
 $ ./run_tests
@@ -110,7 +113,6 @@ The coverage isn't great currently, but it should still be run for all commits.
 Adding more unittests for changes you make would be greatly appreciated :).
 Check out the [tests/](./tests/) subdirectory for more details.
 
-
 ## Check the license
 
 repo is licensed under the Apache License, 2.0.
@@ -126,54 +128,57 @@ changes under the license covering each file *prior* to submitting
 your patch.  It is virtually impossible to remove a patch once it
 has been applied and pushed out.
 
-
-## Sending your patches.
+## Sending your patches
 
 Do not email your patches to anyone.
 
 Instead, login to the Gerrit Code Review tool at:
 
-  https://gerrit-review.googlesource.com/
+  <https://gerrit-review.googlesource.com/>
 
 Ensure you have completed one of the necessary contributor
 agreements, providing documentation to the project maintainers that
 they have right to redistribute your work under the Apache License:
 
-  https://gerrit-review.googlesource.com/#/settings/agreements
+  <https://gerrit-review.googlesource.com/#/settings/agreements>
 
 Ensure you have obtained an HTTP password to authenticate:
 
-  https://gerrit-review.googlesource.com/new-password
+  <https://gerrit-review.googlesource.com/new-password>
 
 Ensure that you have the local commit hook installed to automatically
 add a ChangeId to your commits:
 
-    curl -Lo `git rev-parse --git-dir`/hooks/commit-msg https://gerrit-review.googlesource.com/tools/hooks/commit-msg
-    chmod +x `git rev-parse --git-dir`/hooks/commit-msg
+```bash
+curl -Lo `git rev-parse --git-dir`/hooks/commit-msg https://gerrit-review.googlesource.com/tools/hooks/commit-msg
+chmod +x `git rev-parse --git-dir`/hooks/commit-msg
+```
 
 If you have already committed your changes you will need to amend the commit
 to get the ChangeId added.
 
-    git commit --amend
+```bash
+git commit --amend
+```
 
 Push your patches over HTTPS to the review server, possibly through
 a remembered remote to make this easier in the future:
 
-    git config remote.review.url https://gerrit-review.googlesource.com/git-repo
-    git config remote.review.push HEAD:refs/for/main
+```bash
+git config remote.review.url https://gerrit-review.googlesource.com/git-repo
+git config remote.review.push HEAD:refs/for/main
 
-    git push review
+git push review
+```
 
 You will be automatically emailed a copy of your commits, and any
 comments made by the project maintainers.
-
 
 ## Make changes if requested
 
 The project maintainer who reviews your changes might request changes to your
 commit. If you make the requested changes you will need to amend your commit
 and push it to the review server again.
-
 
 ## Verify your changes on Gerrit {#verify}
 

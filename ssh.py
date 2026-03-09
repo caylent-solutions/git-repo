@@ -34,9 +34,7 @@ PROXY_PATH = os.path.join(os.path.dirname(__file__), "git_ssh")
 
 def _run_ssh_version():
     """run ssh -V to display the version number"""
-    return subprocess.check_output(
-        ["ssh", "-V"], stderr=subprocess.STDOUT
-    ).decode()
+    return subprocess.check_output(["ssh", "-V"], stderr=subprocess.STDOUT).decode()
 
 
 def _parse_ssh_version(ver_str=None):
@@ -60,8 +58,7 @@ def version():
         sys.exit(1)
     except subprocess.CalledProcessError as e:
         print(
-            "fatal: unable to detect ssh version"
-            f" (code={e.returncode}, output={e.stdout})",
+            f"fatal: unable to detect ssh version (code={e.returncode}, output={e.stdout})",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -234,11 +231,7 @@ class ProxyManager:
             f"SetEnv GIT_PROTOCOL=version={git_protocol_version}",
         ]
 
-        command = (
-            command_base[:1]
-            + ["-M", "-N", *ssh_git_protocol_args]
-            + command_base[1:]
-        )
+        command = command_base[:1] + ["-M", "-N", *ssh_git_protocol_args] + command_base[1:]
         p = None
         try:
             with Trace("Call to ssh: %s", " ".join(command)):
@@ -246,8 +239,7 @@ class ProxyManager:
         except Exception as e:
             self._master_broken.value = True
             print(
-                "\nwarn: cannot enable ssh control master for %s:%s\n%s"
-                % (host, port, str(e)),
+                "\nwarn: cannot enable ssh control master for %s:%s\n%s" % (host, port, str(e)),
                 file=sys.stderr,
             )
             return False
@@ -316,9 +308,7 @@ class ProxyManager:
                 tokens = "%r@%h:%p"
             else:
                 tokens = "%C"  # hash of %l%h%p%r
-            self._sock_path = os.path.join(
-                tempfile.mkdtemp("", "ssh-", tmp_dir), "master-" + tokens
-            )
+            self._sock_path = os.path.join(tempfile.mkdtemp("", "ssh-", tmp_dir), "master-" + tokens)
         return self._sock_path
 
 

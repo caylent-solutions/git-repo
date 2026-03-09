@@ -118,11 +118,11 @@ The `target` is defined by environment variables in the order below.  If none
 of them match, then `target` is omitted.  These variables were decided as they
 match the settings Android build environments automatically setup.
 
-1.  `${SYNC_TARGET}`: If defined, the value is used directly.
-2.  `${TARGET_PRODUCT}-${TARGET_RELEASE}-${TARGET_BUILD_VARIANT}`: If these
-    variables are all defined, then they are merged with `-` and used.
-3.  `${TARGET_PRODUCT}-${TARGET_BUILD_VARIANT}`: If these variables are all
-    defined, then they are merged with `-` and used.
+1. `${SYNC_TARGET}`: If defined, the value is used directly.
+2. `${TARGET_PRODUCT}-${TARGET_RELEASE}-${TARGET_BUILD_VARIANT}`: If these
+   variables are all defined, then they are merged with `-` and used.
+3. `${TARGET_PRODUCT}-${TARGET_BUILD_VARIANT}`: If these variables are all
+   defined, then they are merged with `-` and used.
 
 ### --smart-tag=TAG
 

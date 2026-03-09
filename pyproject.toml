@@ -12,20 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-[tool.black]
-line-length = 80
-# NB: Keep in sync with tox.ini.
-target-version = ['py36', 'py37', 'py38', 'py39', 'py310', 'py311'] #, 'py312'
-extend-exclude = '''
-(
-  \.devcontainer/fix-line-endings\.py
-)
-'''
-
-[tool.isort]
-skip = [".devcontainer/fix-line-endings.py"]
-
 [tool.pytest.ini_options]
 markers = """
     skip_cq: Skip tests in the CQ. Should be rarely used!
+    unit: Unit tests.
+    functional: Functional tests.
 """

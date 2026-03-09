@@ -57,13 +57,7 @@ The '%prog' command stages files to prepare the next commit.
             self.Usage()
 
     def _Interactive(self, opt, args):
-        all_projects = [
-            p
-            for p in self.GetProjects(
-                args, all_manifests=not opt.this_manifest_only
-            )
-            if p.IsDirty()
-        ]
+        all_projects = [p for p in self.GetProjects(args, all_manifests=not opt.this_manifest_only) if p.IsDirty()]
         if not all_projects:
             logger.error("no projects have uncommitted modifications")
             return
@@ -117,11 +111,7 @@ The '%prog' command stages files to prepare the next commit.
                     _AddI(all_projects[a_index - 1])
                     continue
 
-            projects = [
-                p
-                for p in all_projects
-                if a in [p.name, p.RelPath(local=opt.this_manifest_only)]
-            ]
+            projects = [p for p in all_projects if a in [p.name, p.RelPath(local=opt.this_manifest_only)]]
             if len(projects) == 1:
                 _AddI(projects[0])
                 continue

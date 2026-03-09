@@ -130,9 +130,7 @@ class Command:
                 usage = self.helpUsage.strip().replace("%prog", me)
             except AttributeError:
                 usage = "repo %s" % self.NAME
-            epilog = (
-                "Run `repo help %s` to view the detailed manual." % self.NAME
-            )
+            epilog = "Run `repo help %s` to view the detailed manual." % self.NAME
             self._optparse = optparse.OptionParser(usage=usage, epilog=epilog)
             self._CommonOptions(self._optparse)
             self._Options(self._optparse)
@@ -406,14 +404,10 @@ class Command:
             derived_projects = {}
             for project in all_projects_list:
                 if submodules_ok or project.sync_s:
-                    derived_projects.update(
-                        (p.name, p) for p in project.GetDerivedSubprojects()
-                    )
+                    derived_projects.update((p.name, p) for p in project.GetDerivedSubprojects())
             all_projects_list.extend(derived_projects.values())
             for project in all_projects_list:
-                if (missing_ok or project.Exists) and project.MatchesGroups(
-                    groups
-                ):
+                if (missing_ok or project.Exists) and project.MatchesGroups(groups):
                     result.append(project)
         else:
             self._ResetPathToProjectMap(all_projects_list)
@@ -424,9 +418,7 @@ class Command:
                 # them.
                 projects = [
                     project
-                    for project in manifest.GetProjectsWithName(
-                        arg, all_manifests=all_manifests
-                    )
+                    for project in manifest.GetProjectsWithName(arg, all_manifests=all_manifests)
                     if project.MatchesGroups(groups)
                 ]
 
@@ -443,20 +435,13 @@ class Command:
                     # If it's not a derived project, update path->project
                     # mapping and search again, as arg might actually point to
                     # a derived subproject.
-                    if (
-                        project
-                        and not project.Derived
-                        and (submodules_ok or project.sync_s)
-                    ):
+                    if project and not project.Derived and (submodules_ok or project.sync_s):
                         search_again = False
                         for subproject in project.GetDerivedSubprojects():
                             self._UpdatePathToProjectMap(subproject)
                             search_again = True
                         if search_again:
-                            project = (
-                                self._GetProjectByPath(manifest, path)
-                                or project
-                            )
+                            project = self._GetProjectByPath(manifest, path) or project
 
                     if project:
                         projects = [project]
@@ -466,10 +451,7 @@ class Command:
 
                 for project in projects:
                     if not missing_ok and not project.Exists:
-                        raise NoSuchProjectError(
-                            "%s (%s)"
-                            % (arg, project.RelPath(local=not all_manifests))
-                        )
+                        raise NoSuchProjectError("%s (%s)" % (arg, project.RelPath(local=not all_manifests)))
                     if not project.MatchesGroups(groups):
                         raise InvalidProjectGroupsError(arg)
 
@@ -506,9 +488,7 @@ class Command:
             else:
                 if inverse:
                     result.append(project)
-        result.sort(
-            key=lambda project: (project.manifest.path_prefix, project.relpath)
-        )
+        result.sort(key=lambda project: (project.manifest.path_prefix, project.relpath))
         return result
 
     def ManifestList(self, opt):

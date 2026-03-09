@@ -95,20 +95,14 @@ branch but need to incorporate new upstream changes "underneath" them.
         )
 
     def Execute(self, opt, args):
-        all_projects = self.GetProjects(
-            args, all_manifests=not opt.this_manifest_only
-        )
+        all_projects = self.GetProjects(args, all_manifests=not opt.this_manifest_only)
         one_project = len(all_projects) == 1
 
         if opt.interactive and not one_project:
-            logger.error(
-                "error: interactive rebase not supported with multiple projects"
-            )
+            logger.error("error: interactive rebase not supported with multiple projects")
 
             if len(args) == 1:
-                logger.warning(
-                    "note: project %s is mapped to more than one path", args[0]
-                )
+                logger.warning("note: project %s is mapped to more than one path", args[0])
 
             return 1
 

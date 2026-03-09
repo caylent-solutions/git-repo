@@ -64,9 +64,7 @@ def test_output_format_xml_file(tmp_path):
     opt, args = cmd.OptionParser.parse_args(["--output-file", str(outpath)])
     cmd.Execute(opt, args)
     # Normalize the output a bit as we don't exactly care.
-    normalize = lambda data: "\n".join(
-        x.strip() for x in data.splitlines() if x.strip()
-    )
+    normalize = lambda data: "\n".join(x.strip() for x in data.splitlines() if x.strip())
     assert (
         normalize(outpath.read_text())
         == """<?xml version="1.0" encoding="UTF-8"?>
@@ -87,9 +85,7 @@ def test_output_format_xml_stdout(tmp_path, capsys):
     opt, args = cmd.OptionParser.parse_args(["--format", "xml"])
     cmd.Execute(opt, args)
     # Normalize the output a bit as we don't exactly care.
-    normalize = lambda data: "\n".join(
-        x.strip() for x in data.splitlines() if x.strip()
-    )
+    normalize = lambda data: "\n".join(x.strip() for x in data.splitlines() if x.strip())
     stdout = capsys.readouterr().out
     assert (
         normalize(stdout)

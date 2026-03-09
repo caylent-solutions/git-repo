@@ -115,9 +115,7 @@ is shown, then the branch appears in all projects.
         return branches
 
     def Execute(self, opt, args):
-        projects = self.GetProjects(
-            args, all_manifests=not opt.this_manifest_only
-        )
+        projects = self.GetProjects(args, all_manifests=not opt.this_manifest_only)
         out = BranchColoring(self.manifest.manifestProject.config)
         all_branches = {}
         project_cnt = len(projects)

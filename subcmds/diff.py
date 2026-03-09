@@ -59,9 +59,7 @@ to the Unix 'patch' command.
         return (ret, buf.getvalue())
 
     def Execute(self, opt, args):
-        all_projects = self.GetProjects(
-            args, all_manifests=not opt.this_manifest_only
-        )
+        all_projects = self.GetProjects(args, all_manifests=not opt.this_manifest_only)
 
         def _ProcessResults(_pool, _output, results):
             ret = 0
@@ -76,9 +74,7 @@ to the Unix 'patch' command.
             self.get_parallel_context()["projects"] = all_projects
             return self.ExecuteInParallel(
                 opt.jobs,
-                functools.partial(
-                    self._ExecuteOne, opt.absolute, opt.this_manifest_only
-                ),
+                functools.partial(self._ExecuteOne, opt.absolute, opt.this_manifest_only),
                 range(len(all_projects)),
                 callback=_ProcessResults,
                 ordered=True,

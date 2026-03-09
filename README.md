@@ -1,6 +1,8 @@
 # repo
 
-> **Note:** This is a Caylent fork of the repo tool. For Caylent-specific instructions and usage, see [CAYLENT-README.md](./CAYLENT-README.md).
+> **Note:** This is a Caylent fork of the repo tool.
+> For Caylent-specific instructions and usage,
+> see [CAYLENT-README.md](./CAYLENT-README.md).
 
 Repo is a tool built on top of Git.  Repo helps manage many Git repositories,
 does the uploads to revision control systems, and automates parts of the
@@ -35,6 +37,7 @@ So please search those sites first.
 ## Install
 
 Many distros include repo, so you might be able to install from there.
+
 ```sh
 # Debian/Ubuntu.
 $ sudo apt-get install repo
@@ -44,13 +47,13 @@ $ sudo emerge dev-vcs/repo
 ```
 
 You can install it manually as well as it's a single script.
-```sh
-$ mkdir -p ~/.bin
-$ PATH="${HOME}/.bin:${PATH}"
-$ curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
-$ chmod a+rx ~/.bin/repo
-```
 
+```sh
+mkdir -p ~/.bin
+PATH="${HOME}/.bin:${PATH}"
+curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
+chmod a+rx ~/.bin/repo
+```
 
 [new-bug]: https://issues.gerritcodereview.com/issues/new?component=1370071
 [issue tracker]: https://issues.gerritcodereview.com/issues?q=is:open%20componentid:1370071

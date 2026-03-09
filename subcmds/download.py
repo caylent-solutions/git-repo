@@ -100,9 +100,7 @@ If no project is specified try to use current directory as a project.
                                 ps_id = max(int(match.group(1)), ps_id)
                 to_get.append((project, chg_id, ps_id))
             else:
-                projects = self.GetProjects(
-                    [a], all_manifests=not opt.this_manifest_only
-                )
+                projects = self.GetProjects([a], all_manifests=not opt.this_manifest_only)
                 if len(projects) > 1:
                     # If the cwd is one of the projects, assume they want that.
                     try:
@@ -111,8 +109,7 @@ If no project is specified try to use current directory as a project.
                         project = None
                     if project not in projects:
                         logger.error(
-                            "error: %s matches too many projects; please "
-                            "re-run inside the project checkout.",
+                            "error: %s matches too many projects; please re-run inside the project checkout.",
                             a,
                         )
                         for project in projects:
@@ -130,14 +127,10 @@ If no project is specified try to use current directory as a project.
     def ValidateOptions(self, opt, args):
         if opt.record_origin:
             if not opt.cherrypick:
-                self.OptionParser.error(
-                    "-x only makes sense with --cherry-pick"
-                )
+                self.OptionParser.error("-x only makes sense with --cherry-pick")
 
             if opt.ffonly:
-                self.OptionParser.error(
-                    "-x and --ff are mutually exclusive options"
-                )
+                self.OptionParser.error("-x and --ff are mutually exclusive options")
 
     def Execute(self, opt, args):
         try:

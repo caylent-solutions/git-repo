@@ -49,9 +49,7 @@ def test_get_current_branch_only(use_superproject, cli_args, result):
     cmd = sync.Sync()
     opts, _ = cmd.OptionParser.parse_args(cli_args)
 
-    with mock.patch(
-        "git_superproject.UseSuperproject", return_value=use_superproject
-    ):
+    with mock.patch("git_superproject.UseSuperproject", return_value=use_superproject):
         assert cmd._GetCurrentBranchOnly(opts, cmd.manifest) == result
 
 
@@ -177,9 +175,7 @@ class LocalSyncState(unittest.TestCase):
         p = mock.MagicMock(relpath="projA")
         self.state.SetFetchTime(p)
         self.state.Save()
-        self.assertEqual(
-            os.listdir(self.repodir), [".repo_localsyncstate.json"]
-        )
+        self.assertEqual(os.listdir(self.repodir), [".repo_localsyncstate.json"])
 
     def test_partial_sync(self):
         """Partial sync state is detected."""
@@ -219,9 +215,7 @@ class LocalSyncState(unittest.TestCase):
 
         self.state = self._new_state(self._TIME + 1)
         self.state.SetFetchTime(self.manifest.repoProject)
-        self.assertEqual(
-            self.state.GetFetchTime(self.manifest.repoProject), self._TIME + 1
-        )
+        self.assertEqual(self.state.GetFetchTime(self.manifest.repoProject), self._TIME + 1)
         self.assertEqual(self.state.GetFetchTime(p), self._TIME)
         self.assertEqual(self.state.IsPartiallySynced(), False)
 
@@ -397,9 +391,7 @@ class GetPreciousObjectsState(unittest.TestCase):
     def setUp(self):
         """Common setup."""
         self.cmd = sync.Sync()
-        self.project = p = mock.MagicMock(
-            use_git_worktrees=False, UseAlternates=False
-        )
+        self.project = p = mock.MagicMock(use_git_worktrees=False, UseAlternates=False)
         p.manifest.GetProjectsWithName.return_value = [p]
 
         self.opt = mock.Mock(spec_set=["this_manifest_only"])
@@ -408,15 +400,11 @@ class GetPreciousObjectsState(unittest.TestCase):
     def test_worktrees(self):
         """False for worktrees."""
         self.project.use_git_worktrees = True
-        self.assertFalse(
-            self.cmd._GetPreciousObjectsState(self.project, self.opt)
-        )
+        self.assertFalse(self.cmd._GetPreciousObjectsState(self.project, self.opt))
 
     def test_not_shared(self):
         """Singleton project."""
-        self.assertFalse(
-            self.cmd._GetPreciousObjectsState(self.project, self.opt)
-        )
+        self.assertFalse(self.cmd._GetPreciousObjectsState(self.project, self.opt))
 
     def test_shared(self):
         """Shared project."""
@@ -424,9 +412,7 @@ class GetPreciousObjectsState(unittest.TestCase):
             self.project,
             self.project,
         ]
-        self.assertTrue(
-            self.cmd._GetPreciousObjectsState(self.project, self.opt)
-        )
+        self.assertTrue(self.cmd._GetPreciousObjectsState(self.project, self.opt))
 
     def test_shared_with_alternates(self):
         """Shared project, with alternates."""
@@ -435,16 +421,12 @@ class GetPreciousObjectsState(unittest.TestCase):
             self.project,
         ]
         self.project.UseAlternates = True
-        self.assertFalse(
-            self.cmd._GetPreciousObjectsState(self.project, self.opt)
-        )
+        self.assertFalse(self.cmd._GetPreciousObjectsState(self.project, self.opt))
 
     def test_not_found(self):
         """Project not found in manifest."""
         self.project.manifest.GetProjectsWithName.return_value = []
-        self.assertFalse(
-            self.cmd._GetPreciousObjectsState(self.project, self.opt)
-        )
+        self.assertFalse(self.cmd._GetPreciousObjectsState(self.project, self.opt))
 
 
 class SyncCommand(unittest.TestCase):
@@ -493,9 +475,7 @@ class SyncCommand(unittest.TestCase):
             return_value=None,
         ).start()
 
-        mock.patch.object(
-            self.cmd, "GetProjects", return_value=[self.project]
-        ).start()
+        mock.patch.object(self.cmd, "GetProjects", return_value=[self.project]).start()
 
         opt, _ = self.cmd.OptionParser.parse_args([])
         opt.clone_bundle = False
@@ -515,12 +495,8 @@ class SyncCommand(unittest.TestCase):
 
     def test_command_exit_error(self):
         """Ensure unsuccessful commands raise expected errors."""
-        self.sync_network_half_error = GitError(
-            "sync_network_half_error error", project=self.project
-        )
-        self.sync_local_half_error = GitError(
-            "sync_local_half_error", project=self.project
-        )
+        self.sync_network_half_error = GitError("sync_network_half_error error", project=self.project)
+        self.sync_local_half_error = GitError("sync_local_half_error", project=self.project)
         with self.assertRaises(RepoExitError) as e:
             self.cmd.Execute(self.opt, [])
             self.assertIn(self.sync_local_half_error, e.aggregate_errors)
@@ -536,9 +512,7 @@ class SyncUpdateRepoProject(unittest.TestCase):
         self.manifest = manifest = mock.MagicMock(repodir=self.repodir)
         # Create a repoProject with a mock Sync_NetworkHalf.
         repoProject = mock.MagicMock(name="repo")
-        repoProject.Sync_NetworkHalf = mock.Mock(
-            return_value=SyncNetworkHalfResult(True, None)
-        )
+        repoProject.Sync_NetworkHalf = mock.Mock(return_value=SyncNetworkHalfResult(True, None))
         manifest.repoProject = repoProject
         manifest.IsArchive = False
         manifest.CloneFilter = None
@@ -570,9 +544,7 @@ class SyncUpdateRepoProject(unittest.TestCase):
 
     def test_fetches_when_stale(self):
         """Test it fetches when the repo project is stale."""
-        self.manifest.repoProject.LastFetch = time.time() - (
-            sync._ONE_DAY_S + 1
-        )
+        self.manifest.repoProject.LastFetch = time.time() - (sync._ONE_DAY_S + 1)
 
         with mock.patch.object(sync, "_PostRepoFetch") as mock_post_fetch:
             self.cmd._UpdateRepoProject(self.opt, self.manifest, self.errors)
@@ -592,9 +564,7 @@ class SyncUpdateRepoProject(unittest.TestCase):
     def test_skips_local_only(self):
         """Test it does nothing with --local-only."""
         self.opt.local_only = True
-        self.manifest.repoProject.LastFetch = time.time() - (
-            sync._ONE_DAY_S + 1
-        )
+        self.manifest.repoProject.LastFetch = time.time() - (sync._ONE_DAY_S + 1)
 
         with mock.patch.object(sync, "_PostRepoFetch") as mock_post_fetch:
             self.cmd._UpdateRepoProject(self.opt, self.manifest, self.errors)
@@ -607,20 +577,14 @@ class SyncUpdateRepoProject(unittest.TestCase):
 
         with mock.patch.dict(os.environ, {"REPO_SKIP_SELF_UPDATE": "1"}):
             with mock.patch.object(sync, "_PostRepoFetch") as mock_post_fetch:
-                self.cmd._UpdateRepoProject(
-                    self.opt, self.manifest, self.errors
-                )
+                self.cmd._UpdateRepoProject(self.opt, self.manifest, self.errors)
                 mock_post_fetch.assert_not_called()
 
     def test_fetch_failure_is_handled(self):
         """Test that a fetch failure is recorded and doesn't crash."""
-        self.manifest.repoProject.LastFetch = time.time() - (
-            sync._ONE_DAY_S + 1
-        )
+        self.manifest.repoProject.LastFetch = time.time() - (sync._ONE_DAY_S + 1)
         fetch_error = GitError("Fetch failed")
-        self.manifest.repoProject.Sync_NetworkHalf.return_value = (
-            SyncNetworkHalfResult(False, fetch_error)
-        )
+        self.manifest.repoProject.Sync_NetworkHalf.return_value = SyncNetworkHalfResult(False, fetch_error)
 
         with mock.patch.object(sync, "_PostRepoFetch") as mock_post_fetch:
             self.cmd._UpdateRepoProject(self.opt, self.manifest, self.errors)
@@ -645,17 +609,13 @@ class InterleavedSyncTest(unittest.TestCase):
 
         self.outer_client = mock.MagicMock()
         self.outer_client.manifest.IsArchive = False
-        self.cmd = sync.Sync(
-            manifest=self.manifest, outer_client=self.outer_client
-        )
+        self.cmd = sync.Sync(manifest=self.manifest, outer_client=self.outer_client)
         self.cmd.outer_manifest = self.manifest
 
         # Mock projects.
         self.projA = FakeProject("projA", objdir="objA")
         self.projB = FakeProject("projB", objdir="objB")
-        self.projA_sub = FakeProject(
-            "projA/sub", name="projA_sub", objdir="objA_sub"
-        )
+        self.projA_sub = FakeProject("projA/sub", name="projA_sub", objdir="objA_sub")
         self.projC = FakeProject("projC", objdir="objC")
 
         # Mock methods that are not part of the core interleaved sync logic.
@@ -666,9 +626,7 @@ class InterleavedSyncTest(unittest.TestCase):
         mock.patch.object(sync, "_PostRepoFetch").start()
 
         # Mock parallel context for worker tests.
-        self.parallel_context_patcher = mock.patch(
-            "subcmds.sync.Sync.get_parallel_context"
-        )
+        self.parallel_context_patcher = mock.patch("subcmds.sync.Sync.get_parallel_context")
         self.mock_get_parallel_context = self.parallel_context_patcher.start()
         self.sync_dict = {}
         self.mock_context = {
@@ -687,9 +645,7 @@ class InterleavedSyncTest(unittest.TestCase):
 
     def test_interleaved_fail_fast(self):
         """Test that --fail-fast is respected in interleaved mode."""
-        opt, args = self.cmd.OptionParser.parse_args(
-            ["--interleaved", "--fail-fast", "-j2"]
-        )
+        opt, args = self.cmd.OptionParser.parse_args(["--interleaved", "--fail-fast", "-j2"])
         opt.quiet = True
 
         # With projA/sub, _SafeCheckoutOrder creates two batches:
@@ -697,15 +653,11 @@ class InterleavedSyncTest(unittest.TestCase):
         # 2. [projA/sub]
         # We want to fail on the first batch and ensure the second isn't run.
         all_projects = [self.projA, self.projB, self.projA_sub]
-        mock.patch.object(
-            self.cmd, "GetProjects", return_value=all_projects
-        ).start()
+        mock.patch.object(self.cmd, "GetProjects", return_value=all_projects).start()
 
         # Mock ExecuteInParallel to simulate a failed run on the first batch of
         # projects.
-        execute_mock = mock.patch.object(
-            self.cmd, "ExecuteInParallel", return_value=False
-        ).start()
+        execute_mock = mock.patch.object(self.cmd, "ExecuteInParallel", return_value=False).start()
 
         with self.assertRaises(sync.SyncFailFastError):
             self.cmd._SyncInterleaved(
@@ -730,9 +682,7 @@ class InterleavedSyncTest(unittest.TestCase):
         self.projC.objdir = "common_objdir"
 
         all_projects = [self.projA, self.projB, self.projC]
-        mock.patch.object(
-            self.cmd, "GetProjects", return_value=all_projects
-        ).start()
+        mock.patch.object(self.cmd, "GetProjects", return_value=all_projects).start()
 
         def execute_side_effect(jobs, target, work_items, **kwargs):
             # The callback is a partial object. The first arg is the set we
@@ -741,14 +691,10 @@ class InterleavedSyncTest(unittest.TestCase):
             projects_in_pass = self.cmd.get_parallel_context()["projects"]
             for item in work_items:
                 for project_idx in item:
-                    synced_relpaths_set.add(
-                        projects_in_pass[project_idx].relpath
-                    )
+                    synced_relpaths_set.add(projects_in_pass[project_idx].relpath)
             return True
 
-        execute_mock = mock.patch.object(
-            self.cmd, "ExecuteInParallel", side_effect=execute_side_effect
-        ).start()
+        execute_mock = mock.patch.object(self.cmd, "ExecuteInParallel", side_effect=execute_side_effect).start()
 
         self.cmd._SyncInterleaved(
             opt,
@@ -790,9 +736,7 @@ class InterleavedSyncTest(unittest.TestCase):
         """Test _SyncProjectList with a successful fetch and checkout."""
         opt = self._get_opts()
         project = self.projA
-        project.Sync_NetworkHalf = mock.Mock(
-            return_value=SyncNetworkHalfResult(error=None, remote_fetched=True)
-        )
+        project.Sync_NetworkHalf = mock.Mock(return_value=SyncNetworkHalfResult(error=None, remote_fetched=True))
         project.Sync_LocalHalf = mock.Mock()
         project.manifest.manifestProject.config = mock.MagicMock()
         self.mock_context["projects"] = [project]
@@ -819,9 +763,7 @@ class InterleavedSyncTest(unittest.TestCase):
         project = self.projA
         fetch_error = GitError("Fetch failed")
         project.Sync_NetworkHalf = mock.Mock(
-            return_value=SyncNetworkHalfResult(
-                error=fetch_error, remote_fetched=False
-            )
+            return_value=SyncNetworkHalfResult(error=fetch_error, remote_fetched=False)
         )
         project.Sync_LocalHalf = mock.Mock()
         self.mock_context["projects"] = [project]
@@ -858,9 +800,7 @@ class InterleavedSyncTest(unittest.TestCase):
         """Test _SyncProjectList with an exception during checkout."""
         opt = self._get_opts()
         project = self.projA
-        project.Sync_NetworkHalf = mock.Mock(
-            return_value=SyncNetworkHalfResult(error=None, remote_fetched=True)
-        )
+        project.Sync_NetworkHalf = mock.Mock(return_value=SyncNetworkHalfResult(error=None, remote_fetched=True))
         checkout_error = GitError("Checkout failed")
         project.Sync_LocalHalf = mock.Mock(side_effect=checkout_error)
         project.manifest.manifestProject.config = mock.MagicMock()
@@ -903,9 +843,7 @@ class InterleavedSyncTest(unittest.TestCase):
         """Test _SyncProjectList with --network-only."""
         opt = self._get_opts(["--interleaved", "--network-only"])
         project = self.projA
-        project.Sync_NetworkHalf = mock.Mock(
-            return_value=SyncNetworkHalfResult(error=None, remote_fetched=True)
-        )
+        project.Sync_NetworkHalf = mock.Mock(return_value=SyncNetworkHalfResult(error=None, remote_fetched=True))
         project.Sync_LocalHalf = mock.Mock()
         self.mock_context["projects"] = [project]
 

@@ -98,9 +98,7 @@ class GitConfig:
         This matches git behavior:
         https://git-scm.com/docs/git-config#FILES
         """
-        xdg_config_home = os.getenv(
-            "XDG_CONFIG_HOME", os.path.expanduser("~/.config")
-        )
+        xdg_config_home = os.getenv("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
         xdg_config_file = os.path.join(xdg_config_home, "git", "config")
         if os.path.exists(xdg_config_file):
             return xdg_config_file
@@ -173,8 +171,7 @@ class GitConfig:
             return int(v, base=base) * mult
         except ValueError:
             print(
-                f"warning: expected {name} to represent an integer, got {v} "
-                "instead",
+                f"warning: expected {name} to represent an integer, got {v} instead",
                 file=sys.stderr,
             )
             return None
@@ -302,11 +299,7 @@ class GitConfig:
 
     def GetSyncAnalysisStateData(self):
         """Returns data to be logged for the analysis of sync performance."""
-        return {
-            k: v
-            for k, v in self.DumpConfigDict().items()
-            if k.startswith(SYNC_STATE_PREFIX)
-        }
+        return {k: v for k, v in self.DumpConfigDict().items() if k.startswith(SYNC_STATE_PREFIX)}
 
     def UpdateSyncAnalysisState(self, options, superproject_logging_data):
         """Update Config's SYNC_STATE_PREFIX* data with the latest sync data.
@@ -528,9 +521,7 @@ def GetUrlCookieFile(url, quiet):
                 for line in p.stdout:
                     line = line.strip().decode("utf-8")
                     if line.startswith(cookieprefix):
-                        cookiefile = os.path.expanduser(
-                            line[len(cookieprefix) :]
-                        )
+                        cookiefile = os.path.expanduser(line[len(cookieprefix) :])
                     if line.startswith(proxyprefix):
                         proxy = line[len(proxyprefix) :]
                 # Leave subprocess open, as cookie file may be transient.
@@ -565,9 +556,7 @@ class Remote:
         self.pushUrl = self._Get("pushurl")
         self.review = self._Get("review")
         self.projectname = self._Get("projectname")
-        self.fetch = list(
-            map(RefSpec.FromString, self._Get("fetch", all_keys=True))
-        )
+        self.fetch = list(map(RefSpec.FromString, self._Get("fetch", all_keys=True)))
         self._review_url = None
 
     def _InsteadOf(self):
@@ -581,9 +570,7 @@ class Remote:
             insteadOfList = globCfg.GetString(key, all_keys=True)
 
             for insteadOf in insteadOfList:
-                if self.url.startswith(insteadOf) and len(insteadOf) > len(
-                    longest
-                ):
+                if self.url.startswith(insteadOf) and len(insteadOf) > len(longest):
                     longest = insteadOf
                     longestUrl = url
 
@@ -645,9 +632,7 @@ class Remote:
                     info_url = u + "ssh_info"
                     if not validate_certs:
                         context = ssl._create_unverified_context()
-                        info = urllib.request.urlopen(
-                            info_url, context=context
-                        ).read()
+                        info = urllib.request.urlopen(info_url, context=context).read()
                     else:
                         info = urllib.request.urlopen(info_url).read()
                     if info == b"NOT_AVAILABLE" or b"<" in info:
@@ -661,9 +646,7 @@ class Remote:
                     else:
                         info = info.decode("utf-8")
                         host, port = info.split()
-                        self._review_url = self._SshReviewUrl(
-                            userEmail, host, port
-                        )
+                        self._review_url = self._SshReviewUrl(userEmail, host, port)
                 except urllib.error.HTTPError as e:
                     raise UploadError(f"{self.review}: {str(e)}")
                 except urllib.error.URLError as e:
@@ -695,10 +678,7 @@ class Remote:
         if not rev.startswith(R_HEADS):
             return rev
 
-        raise GitError(
-            "%s: remote %s does not have %s"
-            % (self.projectname, self.name, rev)
-        )
+        raise GitError("%s: remote %s does not have %s" % (self.projectname, self.name, rev))
 
     def WritesTo(self, ref):
         """True if the remote stores to the tracking ref."""
@@ -821,8 +801,7 @@ class SyncAnalysisState:
             {
                 k: v
                 for k, v in config_items
-                if not k.startswith(SYNC_STATE_PREFIX)
-                and k.split(".", 1)[0] in EXTRACT_NAMESPACES
+                if not k.startswith(SYNC_STATE_PREFIX) and k.split(".", 1)[0] in EXTRACT_NAMESPACES
             }
         )
 

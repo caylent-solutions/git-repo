@@ -100,18 +100,12 @@ class Superproject:
         self.revision = self._branch = revision
         self._repodir = manifest.repodir
         self._superproject_dir = superproject_dir
-        self._superproject_path = manifest.SubmanifestInfoDir(
-            manifest.path_prefix, superproject_dir
-        )
-        self._manifest_path = os.path.join(
-            self._superproject_path, _SUPERPROJECT_MANIFEST_NAME
-        )
+        self._superproject_path = manifest.SubmanifestInfoDir(manifest.path_prefix, superproject_dir)
+        self._manifest_path = os.path.join(self._superproject_path, _SUPERPROJECT_MANIFEST_NAME)
         git_name = hashlib.md5(remote.name.encode("utf8")).hexdigest() + "-"
         self._remote_url = remote.url
         self._work_git_name = git_name + _SUPERPROJECT_GIT_NAME
-        self._work_git = os.path.join(
-            self._superproject_path, self._work_git_name
-        )
+        self._work_git = os.path.join(self._superproject_path, self._work_git_name)
 
         # The following are command arguemnts, rather than superproject
         # attributes, and were included here originally.  They should eventually
@@ -144,8 +138,7 @@ class Superproject:
         retval = p.Wait()
         if retval != 0:
             self._LogWarning(
-                "git rev-parse call failed, command: git {}, "
-                "return code: {}, stderr: {}",
+                "git rev-parse call failed, command: git {}, return code: {}, stderr: {}",
                 cmd,
                 retval,
                 p.stderr,
@@ -161,9 +154,7 @@ class Superproject:
     @property
     def manifest_path(self):
         """Returns the manifest path if the path exists or None."""
-        return (
-            self._manifest_path if os.path.exists(self._manifest_path) else None
-        )
+        return self._manifest_path if os.path.exists(self._manifest_path) else None
 
     @property
     def repo_id(self):
@@ -194,9 +185,7 @@ class Superproject:
 
     def _LogMessagePrefix(self):
         """Returns the prefix string to be logged in each log message"""
-        return (
-            f"repo superproject branch: {self._branch} url: {self._remote_url}"
-        )
+        return f"repo superproject branch: {self._branch} url: {self._remote_url}"
 
     def _LogError(self, fmt, *inputs):
         """Logs error message to stderr and _git_event_log."""
@@ -215,10 +204,7 @@ class Superproject:
         if not os.path.exists(self._superproject_path):
             os.mkdir(self._superproject_path)
         if not self._quiet and not os.path.exists(self._work_git):
-            print(
-                "%s: Performing initial setup for superproject; this might "
-                "take several minutes." % self._work_git
-            )
+            print("%s: Performing initial setup for superproject; this might take several minutes." % self._work_git)
         cmd = ["init", "--bare", self._work_git_name]
         p = GitCommand(
             None,
@@ -230,8 +216,7 @@ class Superproject:
         retval = p.Wait()
         if retval:
             self._LogWarning(
-                "git init call failed, command: git {}, "
-                "return code: {}, stderr: {}",
+                "git init call failed, command: git {}, return code: {}, stderr: {}",
                 cmd,
                 retval,
                 p.stderr,
@@ -251,9 +236,7 @@ class Superproject:
             self._LogWarning("git fetch missing directory: {}", self._work_git)
             return False
         if not git_require((2, 28, 0)):
-            self._LogWarning(
-                "superproject requires a git version 2.28 or later"
-            )
+            self._LogWarning("superproject requires a git version 2.28 or later")
             return False
         cmd = [
             "fetch",
@@ -288,8 +271,7 @@ class Superproject:
         retval = p.Wait()
         if retval:
             self._LogWarning(
-                "git fetch call failed, command: git {}, "
-                "return code: {}, stderr: {}",
+                "git fetch call failed, command: git {}, return code: {}, stderr: {}",
                 cmd,
                 retval,
                 p.stderr,
@@ -306,9 +288,7 @@ class Superproject:
             data: data returned from 'git ls-tree ...'. None on error.
         """
         if not os.path.exists(self._work_git):
-            self._LogWarning(
-                "git ls-tree missing directory: {}", self._work_git
-            )
+            self._LogWarning("git ls-tree missing directory: {}", self._work_git)
             return None
         data = None
         branch = "HEAD" if not self._branch else self._branch
@@ -327,8 +307,7 @@ class Superproject:
             data = p.stdout
         else:
             self._LogWarning(
-                "git ls-tree call failed, command: git {}, "
-                "return code: {}, stderr: {}",
+                "git ls-tree call failed, command: git {}, return code: {}, stderr: {}",
                 cmd,
                 retval,
                 p.stderr,
@@ -366,9 +345,7 @@ class Superproject:
         if not self._Fetch():
             return SyncResult(False, should_exit)
         if not self._quiet:
-            print(
-                "%s: Initial setup for superproject completed." % self._work_git
-            )
+            print("%s: Initial setup for superproject completed." % self._work_git)
         return SyncResult(True, False)
 
     def _GetAllProjectsCommitIds(self):
@@ -416,13 +393,9 @@ class Superproject:
                 instead of None.
         """
         if not os.path.exists(self._superproject_path):
-            self._LogWarning(
-                "missing superproject directory: {}", self._superproject_path
-            )
+            self._LogWarning("missing superproject directory: {}", self._superproject_path)
             return None
-        manifest_str = self._manifest.ToXml(
-            groups=self._manifest.GetGroupsStr(), omit_local=True
-        ).toxml()
+        manifest_str = self._manifest.ToXml(groups=self._manifest.GetGroupsStr(), omit_local=True).toxml()
         manifest_path = self._manifest_path
         try:
             with open(manifest_path, "w", encoding="utf-8") as fp:
@@ -481,8 +454,7 @@ class Superproject:
         # error event and continue as if do not use superproject is specified.
         if projects_missing_commit_ids:
             self._LogWarning(
-                "please file a bug using {} to report missing "
-                "commit_ids for: {}",
+                "please file a bug using {} to report missing commit_ids for: {}",
                 self._manifest.contactinfo.bugurl,
                 projects_missing_commit_ids,
             )
@@ -505,11 +477,7 @@ def _UseSuperprojectFromConfiguration():
     user_value = user_cfg.GetBoolean("repo.superprojectChoice")
     if user_value is not None:
         user_expiration = user_cfg.GetInt("repo.superprojectChoiceExpire")
-        if (
-            user_expiration is None
-            or user_expiration <= 0
-            or user_expiration >= time_now
-        ):
+        if user_expiration is None or user_expiration <= 0 or user_expiration >= time_now:
             # TODO(b/190688390) - Remove prompt when we are comfortable with the
             # new default value.
             if user_value:
@@ -543,9 +511,7 @@ def _UseSuperprojectFromConfiguration():
         # default value.
         userchoice = True
         time_choiceexpire = time_now + (86400 * 14)
-        user_cfg.SetString(
-            "repo.superprojectChoiceExpire", str(time_choiceexpire)
-        )
+        user_cfg.SetString("repo.superprojectChoiceExpire", str(time_choiceexpire))
         user_cfg.SetBoolean("repo.superprojectChoice", userchoice)
         print(
             "You are automatically enrolled in Git submodules experiment "

@@ -61,13 +61,7 @@ variables with values.
 
         def pretty_print(data):
             return "\n".join(
-                [
-                    line
-                    for line in parseString(data)
-                    .toprettyxml(indent=" " * 2)
-                    .split("\n")
-                    if line.strip()
-                ]
+                [line for line in parseString(data).toprettyxml(indent=" " * 2).split("\n") if line.strip()]
             )
 
         with open(outfile, "wb") as f:
@@ -87,9 +81,7 @@ variables with values.
                 and self.is_placeholder_detected(elem.firstChild.nodeValue)
             ):
                 # Replace the environment variable with its value
-                elem.firstChild.nodeValue = self.resolve_variable(
-                    elem.firstChild.nodeValue
-                )
+                elem.firstChild.nodeValue = self.resolve_variable(elem.firstChild.nodeValue)
 
     def is_placeholder_detected(self, value):
         return "$" in value

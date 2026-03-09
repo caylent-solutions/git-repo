@@ -61,10 +61,7 @@ Displays detailed usage information about a command.
         print("The complete list of recognized repo commands is:")
         commandNames = list(sorted(all_commands))
         self._PrintCommands(commandNames)
-        print(
-            "See 'repo help <command>' for more information on a "
-            "specific command."
-        )
+        print("See 'repo help <command>' for more information on a specific command.")
         print("Bug reports:", Wrapper().BUG_URL)
 
     def _PrintCommonCommands(self):
@@ -74,11 +71,7 @@ Displays detailed usage information about a command.
     def PrintCommonCommandsBody(self):
         print("The most commonly used repo commands are:")
 
-        commandNames = list(
-            sorted(
-                name for name, command in all_commands.items() if command.COMMON
-            )
-        )
+        commandNames = list(sorted(name for name, command in all_commands.items() if command.COMMON))
         self._PrintCommands(commandNames)
 
         print(
@@ -182,9 +175,7 @@ Displays detailed usage information about a command.
             try:
                 cmd = all_commands[name](manifest=self.manifest)
             except KeyError:
-                print(
-                    "repo: '%s' is not a repo command." % name, file=sys.stderr
-                )
+                print("repo: '%s' is not a repo command." % name, file=sys.stderr)
                 raise InvalidHelpCommand(name)
 
             self._PrintCommandHelp(cmd)

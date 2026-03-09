@@ -1,9 +1,40 @@
 #!/bin/bash
 
-set -e
+set -uo pipefail
 
 echo "Running pre-push checks..."
 
-make pre-commit
+formatted=0
 
-echo "✓ All pre-push checks passed!"
+# Python lint
+if ! make lint-python; then
+    echo "Python lint failed. Running formatter..."
+    make format-python
+    formatted=1
+fi
+
+# Markdown lint
+if ! make lint-markdown; then
+    echo "Markdown lint failed. Running formatter..."
+    make format-markdown
+    formatted=1
+fi
+
+# YAML lint
+if ! make lint-yaml; then
+    echo "YAML lint failed. Running formatter..."
+    make format-yaml
+    formatted=1
+fi
+
+# Unit tests
+make unit-test
+
+# If any formatter ran, block the push so the user can review and re-stage
+if [ "$formatted" -ne 0 ]; then
+    echo ""
+    echo "ERROR: Files were auto-formatted. Review the changes, stage them, and push again."
+    exit 1
+fi
+
+echo "All pre-push checks passed."

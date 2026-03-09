@@ -58,14 +58,10 @@ It is equivalent to "git branch -D <branchname>".
 
         if not opt.all:
             branches = args[0].split()
-            invalid_branches = [
-                x for x in branches if not git.check_ref_format(f"heads/{x}")
-            ]
+            invalid_branches = [x for x in branches if not git.check_ref_format(f"heads/{x}")]
 
             if invalid_branches:
-                self.OptionParser.error(
-                    f"{invalid_branches} are not valid branch names"
-                )
+                self.OptionParser.error(f"{invalid_branches} are not valid branch names")
         else:
             args.insert(0, "'All local branches'")
 
@@ -97,9 +93,7 @@ It is equivalent to "git branch -D <branchname>".
         err = collections.defaultdict(list)
         success = collections.defaultdict(list)
         aggregate_errors = []
-        all_projects = self.GetProjects(
-            args[1:], all_manifests=not opt.this_manifest_only
-        )
+        all_projects = self.GetProjects(args[1:], all_manifests=not opt.this_manifest_only)
         _RelPath = lambda p: p.RelPath(local=opt.this_manifest_only)
 
         def _ProcessResults(_pool, pm, states):
@@ -120,17 +114,11 @@ It is equivalent to "git branch -D <branchname>".
                 functools.partial(self._ExecuteOne, opt.all, nb),
                 range(len(all_projects)),
                 callback=_ProcessResults,
-                output=Progress(
-                    f"Abandon {nb}", len(all_projects), quiet=opt.quiet
-                ),
+                output=Progress(f"Abandon {nb}", len(all_projects), quiet=opt.quiet),
                 chunksize=1,
             )
 
-        width = max(
-            itertools.chain(
-                [25], (len(x) for x in itertools.chain(success, err))
-            )
-        )
+        width = max(itertools.chain([25], (len(x) for x in itertools.chain(success, err))))
         if err:
             for br in err.keys():
                 err_msg = "error: cannot abandon %s" % br
@@ -147,14 +135,8 @@ It is equivalent to "git branch -D <branchname>".
                 return
             print("Abandoned branches:")
             for br in success.keys():
-                if len(all_projects) > 1 and len(all_projects) == len(
-                    success[br]
-                ):
+                if len(all_projects) > 1 and len(all_projects) == len(success[br]):
                     result = "all project"
                 else:
-                    result = "%s" % (
-                        ("\n" + " " * width + "| ").join(
-                            _RelPath(p) for p in success[br]
-                        )
-                    )
+                    result = "%s" % (("\n" + " " * width + "| ").join(_RelPath(p) for p in success[br]))
                 print(f"{br}{' ' * (width - len(br))}| {result}\n")

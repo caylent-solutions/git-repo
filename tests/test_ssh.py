@@ -31,13 +31,9 @@ class SshTests(unittest.TestCase):
         self.assertEqual(ver, ())
         ver = ssh._parse_ssh_version("OpenSSH_1.0\n")
         self.assertEqual(ver, (1, 0))
-        ver = ssh._parse_ssh_version(
-            "OpenSSH_6.6.1p1 Ubuntu-2ubuntu2.13, OpenSSL 1.0.1f 6 Jan 2014\n"
-        )
+        ver = ssh._parse_ssh_version("OpenSSH_6.6.1p1 Ubuntu-2ubuntu2.13, OpenSSL 1.0.1f 6 Jan 2014\n")
         self.assertEqual(ver, (6, 6, 1))
-        ver = ssh._parse_ssh_version(
-            "OpenSSH_7.6p1 Ubuntu-4ubuntu0.3, OpenSSL 1.0.2n  7 Dec 2017\n"
-        )
+        ver = ssh._parse_ssh_version("OpenSSH_7.6p1 Ubuntu-4ubuntu0.3, OpenSSL 1.0.2n  7 Dec 2017\n")
         self.assertEqual(ver, (7, 6))
         ver = ssh._parse_ssh_version("OpenSSH_9.0p1, LibreSSL 3.3.6\n")
         self.assertEqual(ver, (9, 0))

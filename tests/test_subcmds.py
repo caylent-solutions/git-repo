@@ -94,8 +94,7 @@ class AllCommands(unittest.TestCase):
                     self.assertNotIn(
                         "_",
                         opt,
-                        msg=f"subcmds/{name}.py: {opt}: only use dashes in "
-                        "options, not underscores",
+                        msg=f"subcmds/{name}.py: {opt}: only use dashes in options, not underscores",
                     )
 
     def test_cli_option_dest(self):
@@ -130,9 +129,7 @@ class AllCommands(unittest.TestCase):
                 if not errmsg:
                     errmsg = "Omit redundant dest= when defining options.\n"
                 errmsg += f"\nSubcommand {name} (subcmds/{name}.py):\n"
-                errmsg += "".join(
-                    f"    {opt}: dest='{dest}'\n" for opt, dest in bad_opts
-                )
+                errmsg += "".join(f"    {opt}: dest='{dest}'\n" for opt, dest in bad_opts)
         if errmsg:
             self.fail(errmsg)
 

@@ -106,10 +106,7 @@ least one of these before using this command.""",  # noqa: E501
             except OSError as e:
                 raise EditorError(f"editor failed, {str(e)}: {editor} {path}")
             if rc != 0:
-                raise EditorError(
-                    "editor failed with exit status %d: %s %s"
-                    % (rc, editor, path)
-                )
+                raise EditorError("editor failed with exit status %d: %s %s" % (rc, editor, path))
 
             with open(path, mode="rb") as fd2:
                 return fd2.read().decode("utf-8")

@@ -41,14 +41,12 @@ This is similar to running: repo forall -c 'echo "$REPO_PATH : $REPO_PROJECT"'.
             "-r",
             "--regex",
             action="store_true",
-            help="filter the project list based on regex or wildcard matching "
-            "of strings",
+            help="filter the project list based on regex or wildcard matching of strings",
         )
         p.add_option(
             "-g",
             "--groups",
-            help="filter the project list based on the groups the project is "
-            "in",
+            help="filter the project list based on the groups the project is in",
         )
         p.add_option(
             "-a",
@@ -77,8 +75,7 @@ This is similar to running: repo forall -c 'echo "$REPO_PATH : $REPO_PROJECT"'.
         p.add_option(
             "--relative-to",
             metavar="PATH",
-            help="display paths relative to this one (default: top of repo "
-            "client checkout)",
+            help="display paths relative to this one (default: top of repo client checkout)",
         )
 
     def ValidateOptions(self, opt, args):
@@ -108,9 +105,7 @@ This is similar to running: repo forall -c 'echo "$REPO_PATH : $REPO_PROJECT"'.
                 all_manifests=not opt.this_manifest_only,
             )
         else:
-            projects = self.FindProjects(
-                args, all_manifests=not opt.this_manifest_only
-            )
+            projects = self.FindProjects(args, all_manifests=not opt.this_manifest_only)
 
         def _getpath(x):
             if opt.fullpath:

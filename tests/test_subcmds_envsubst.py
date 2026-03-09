@@ -209,9 +209,7 @@ class EnvsubstCommand(unittest.TestCase):
 
     def test_replacement_when_no_local_overrides_requested(self):
         """Check xml attr value replacement when no local OS subs."""
-        content = (
-            self.mock_top_level_manifest_no_local_override_supplied_file_content
-        )
+        content = self.mock_top_level_manifest_no_local_override_supplied_file_content
         self.util_generic_test(
             content,
             self.expected_no_local_override_supplied,
@@ -222,9 +220,7 @@ class EnvsubstCommand(unittest.TestCase):
         generic test fixture test for expected output vs actual
         """
         with patch("os.rename") as rename:
-            with patch(
-                "builtins.open", new=mock_open(read_data=input_file_content)
-            ) as mocked_file:
+            with patch("builtins.open", new=mock_open(read_data=input_file_content)) as mocked_file:
                 self.cmd.resolve_variable = _mock_os_env_var_resolve
                 self.cmd.EnvSubst("mock-ignored.xml")
                 self.assertEqual(
@@ -232,6 +228,4 @@ class EnvsubstCommand(unittest.TestCase):
                     [call("mock-ignored.xml", "mock-ignored.xml.bak")],
                     "test of Manifest backup before overwrite",
                 )
-                mocked_file().write.assert_called_once_with(
-                    expected_file_content
-                )
+                mocked_file().write.assert_called_once_with(expected_file_content)

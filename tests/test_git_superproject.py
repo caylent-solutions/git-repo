@@ -42,9 +42,7 @@ class SuperprojectTestCase(unittest.TestCase):
         self.tempdirobj = tempfile.TemporaryDirectory(prefix="repo_tests")
         self.tempdir = self.tempdirobj.name
         self.repodir = os.path.join(self.tempdir, ".repo")
-        self.manifest_file = os.path.join(
-            self.repodir, manifest_xml.MANIFEST_FILE_NAME
-        )
+        self.manifest_file = os.path.join(self.repodir, manifest_xml.MANIFEST_FILE_NAME)
         os.mkdir(self.repodir)
         self.platform = platform.system().lower()
 
@@ -80,9 +78,7 @@ class SuperprojectTestCase(unittest.TestCase):
         self._superproject = git_superproject.Superproject(
             manifest,
             name="superproject",
-            remote=manifest.remotes.get("default-remote").ToRemoteSpec(
-                "superproject"
-            ),
+            remote=manifest.remotes.get("default-remote").ToRemoteSpec("superproject"),
             revision="refs/heads/main",
         )
 
@@ -109,9 +105,7 @@ class SuperprojectTestCase(unittest.TestCase):
             self.assertRegex(log_entry["sid"], self.FULL_SID_REGEX)
         else:
             self.assertRegex(log_entry["sid"], self.SELF_SID_REGEX)
-        self.assertRegex(
-            log_entry["time"], r"^\d+-\d+-\d+T\d+:\d+:\d+\.\d+\+00:00$"
-        )
+        self.assertRegex(log_entry["time"], r"^\d+-\d+-\d+T\d+:\d+:\d+\.\d+\+00:00$")
 
     def readLog(self, log_path):
         """Helper function to read log data into a list."""
@@ -161,9 +155,7 @@ class SuperprojectTestCase(unittest.TestCase):
         superproject = git_superproject.Superproject(
             manifest,
             name="superproject",
-            remote=manifest.remotes.get("test-remote").ToRemoteSpec(
-                "superproject"
-            ),
+            remote=manifest.remotes.get("test-remote").ToRemoteSpec("superproject"),
             revision="refs/heads/main",
         )
         sync_result = superproject.Sync(self.git_event_log)
@@ -185,9 +177,7 @@ class SuperprojectTestCase(unittest.TestCase):
         self._superproject = git_superproject.Superproject(
             manifest,
             name="superproject",
-            remote=manifest.remotes.get("test-remote").ToRemoteSpec(
-                "superproject"
-            ),
+            remote=manifest.remotes.get("test-remote").ToRemoteSpec("superproject"),
             revision="refs/heads/main",
         )
         with mock.patch.object(self._superproject, "_branch", "junk"):
@@ -207,9 +197,7 @@ class SuperprojectTestCase(unittest.TestCase):
         """Test with _Fetch failing."""
         with mock.patch.object(self._superproject, "_Init", return_value=True):
             os.mkdir(self._superproject._superproject_path)
-            with mock.patch.object(
-                self._superproject, "_Fetch", return_value=False
-            ):
+            with mock.patch.object(self._superproject, "_Fetch", return_value=False):
                 sync_result = self._superproject.Sync(self.git_event_log)
                 self.assertFalse(sync_result.success)
                 self.assertTrue(sync_result.fatal)
@@ -224,15 +212,9 @@ class SuperprojectTestCase(unittest.TestCase):
             "160000 commit ade9b7a0d874e25fff4bf2552488825c6f111928\tbuild/bazel\x00"
         )
         with mock.patch.object(self._superproject, "_Init", return_value=True):
-            with mock.patch.object(
-                self._superproject, "_Fetch", return_value=True
-            ):
-                with mock.patch.object(
-                    self._superproject, "_LsTree", return_value=data
-                ):
-                    commit_ids_result = (
-                        self._superproject._GetAllProjectsCommitIds()
-                    )
+            with mock.patch.object(self._superproject, "_Fetch", return_value=True):
+                with mock.patch.object(self._superproject, "_LsTree", return_value=data):
+                    commit_ids_result = self._superproject._GetAllProjectsCommitIds()
                     self.assertEqual(
                         commit_ids_result.commit_ids,
                         {
@@ -274,17 +256,11 @@ class SuperprojectTestCase(unittest.TestCase):
             "160000 commit e9d25da64d8d365dbba7c8ee00fe8c4473fe9a06\tbootable/recovery\x00"
         )
         with mock.patch.object(self._superproject, "_Init", return_value=True):
-            with mock.patch.object(
-                self._superproject, "_Fetch", return_value=True
-            ):
-                with mock.patch.object(
-                    self._superproject, "_LsTree", return_value=data
-                ):
+            with mock.patch.object(self._superproject, "_Fetch", return_value=True):
+                with mock.patch.object(self._superproject, "_LsTree", return_value=data):
                     # Create temporary directory so that it can write the file.
                     os.mkdir(self._superproject._superproject_path)
-                    update_result = self._superproject.UpdateProjectsRevisionId(
-                        projects, self.git_event_log
-                    )
+                    update_result = self._superproject.UpdateProjectsRevisionId(projects, self.git_event_log)
                     self.assertIsNotNone(update_result.manifest_path)
                     self.assertFalse(update_result.fatal)
                     with open(update_result.manifest_path) as fp:
@@ -294,9 +270,7 @@ class SuperprojectTestCase(unittest.TestCase):
                         '<?xml version="1.0" ?><manifest>'
                         '<remote fetch="http://localhost" name="default-remote"/>'
                         '<default remote="default-remote" revision="refs/heads/main"/>'
-                        '<project groups="notdefault,platform-'
-                        + self.platform
-                        + '" '
+                        '<project groups="notdefault,platform-' + self.platform + '" '
                         'name="platform/art" path="art" '
                         'revision="2c2724cb36cd5a9cec6c852c681efc3b7c6b86ea" upstream="refs/heads/main"/>'
                         '<superproject name="superproject"/>'
@@ -352,26 +326,18 @@ class SuperprojectTestCase(unittest.TestCase):
         self._superproject = git_superproject.Superproject(
             manifest,
             name="superproject",
-            remote=manifest.remotes.get("default-remote").ToRemoteSpec(
-                "superproject"
-            ),
+            remote=manifest.remotes.get("default-remote").ToRemoteSpec("superproject"),
             revision="refs/heads/main",
         )
         self.assertEqual(len(self._superproject._manifest.projects), 2)
         projects = self._superproject._manifest.projects
         data = "160000 commit 2c2724cb36cd5a9cec6c852c681efc3b7c6b86ea\tart\x00"
         with mock.patch.object(self._superproject, "_Init", return_value=True):
-            with mock.patch.object(
-                self._superproject, "_Fetch", return_value=True
-            ):
-                with mock.patch.object(
-                    self._superproject, "_LsTree", return_value=data
-                ):
+            with mock.patch.object(self._superproject, "_Fetch", return_value=True):
+                with mock.patch.object(self._superproject, "_LsTree", return_value=data):
                     # Create temporary directory so that it can write the file.
                     os.mkdir(self._superproject._superproject_path)
-                    update_result = self._superproject.UpdateProjectsRevisionId(
-                        projects, self.git_event_log
-                    )
+                    update_result = self._superproject.UpdateProjectsRevisionId(projects, self.git_event_log)
                     self.assertIsNotNone(update_result.manifest_path)
                     self.assertFalse(update_result.fatal)
                     with open(update_result.manifest_path) as fp:
@@ -384,9 +350,7 @@ class SuperprojectTestCase(unittest.TestCase):
                         '<remote fetch="http://localhost" name="default-remote"/>'
                         '<remote fetch="http://localhost2" name="goog"/>'
                         '<default remote="default-remote" revision="refs/heads/main"/>'
-                        '<project groups="notdefault,platform-'
-                        + self.platform
-                        + '" '
+                        '<project groups="notdefault,platform-' + self.platform + '" '
                         'name="platform/art" path="art" '
                         'revision="2c2724cb36cd5a9cec6c852c681efc3b7c6b86ea" upstream="refs/heads/main"/>'
                         '<superproject name="superproject"/>'
@@ -414,9 +378,7 @@ class SuperprojectTestCase(unittest.TestCase):
         self._superproject = git_superproject.Superproject(
             manifest,
             name="superproject",
-            remote=manifest.remotes.get("default-remote").ToRemoteSpec(
-                "superproject"
-            ),
+            remote=manifest.remotes.get("default-remote").ToRemoteSpec("superproject"),
             revision="refs/heads/main",
         )
         self.assertEqual(len(self._superproject._manifest.projects), 3)
@@ -426,17 +388,11 @@ class SuperprojectTestCase(unittest.TestCase):
             "160000 commit e9d25da64d8d365dbba7c8ee00fe8c4473fe9a06\tvendor/x\x00"
         )
         with mock.patch.object(self._superproject, "_Init", return_value=True):
-            with mock.patch.object(
-                self._superproject, "_Fetch", return_value=True
-            ):
-                with mock.patch.object(
-                    self._superproject, "_LsTree", return_value=data
-                ):
+            with mock.patch.object(self._superproject, "_Fetch", return_value=True):
+                with mock.patch.object(self._superproject, "_LsTree", return_value=data):
                     # Create temporary directory so that it can write the file.
                     os.mkdir(self._superproject._superproject_path)
-                    update_result = self._superproject.UpdateProjectsRevisionId(
-                        projects, self.git_event_log
-                    )
+                    update_result = self._superproject.UpdateProjectsRevisionId(projects, self.git_event_log)
                     self.assertIsNotNone(update_result.manifest_path)
                     self.assertFalse(update_result.fatal)
                     with open(update_result.manifest_path) as fp:
@@ -448,9 +404,7 @@ class SuperprojectTestCase(unittest.TestCase):
                         '<?xml version="1.0" ?><manifest>'
                         '<remote fetch="http://localhost" name="default-remote"/>'
                         '<default remote="default-remote" revision="refs/heads/main"/>'
-                        '<project groups="notdefault,platform-'
-                        + self.platform
-                        + '" '
+                        '<project groups="notdefault,platform-' + self.platform + '" '
                         'name="platform/art" path="art" '
                         'revision="2c2724cb36cd5a9cec6c852c681efc3b7c6b86ea" upstream="refs/heads/main"/>'
                         '<project name="platform/vendor/x" path="vendor/x" '
@@ -475,20 +429,14 @@ class SuperprojectTestCase(unittest.TestCase):
         self._superproject = git_superproject.Superproject(
             manifest,
             name="superproject",
-            remote=manifest.remotes.get("default-remote").ToRemoteSpec(
-                "superproject"
-            ),
+            remote=manifest.remotes.get("default-remote").ToRemoteSpec("superproject"),
             revision="refs/heads/main",
         )
         os.mkdir(self._superproject._superproject_path)
         os.mkdir(self._superproject._work_git)
         with mock.patch.object(self._superproject, "_Init", return_value=True):
-            with mock.patch(
-                "git_superproject.GitCommand", autospec=True
-            ) as mock_git_command:
-                with mock.patch(
-                    "git_superproject.GitRefs.get", autospec=True
-                ) as mock_git_refs:
+            with mock.patch("git_superproject.GitCommand", autospec=True) as mock_git_command:
+                with mock.patch("git_superproject.GitRefs.get", autospec=True) as mock_git_refs:
                     instance = mock_git_command.return_value
                     instance.Wait.return_value = 0
                     mock_git_refs.side_effect = ["", "1234"]

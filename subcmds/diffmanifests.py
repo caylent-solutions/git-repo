@@ -96,10 +96,7 @@ synced and their revisions won't be found.
             self.out.nl()
 
         for project, otherProject in diff["changed"]:
-            self.printText(
-                f"C {_RelPath(project)} {project.revisionExpr} "
-                f"{otherProject.revisionExpr}"
-            )
+            self.printText(f"C {_RelPath(project)} {project.revisionExpr} {otherProject.revisionExpr}")
             self.out.nl()
             self._printLogs(
                 project,
@@ -110,10 +107,7 @@ synced and their revisions won't be found.
             )
 
         for project, otherProject in diff["unreachable"]:
-            self.printText(
-                f"U {_RelPath(project)} {project.revisionExpr} "
-                f"{otherProject.revisionExpr}"
-            )
+            self.printText(f"U {_RelPath(project)} {project.revisionExpr} {otherProject.revisionExpr}")
             self.out.nl()
 
     def _printDiff(self, diff, color=True, pretty_format=None, local=False):
@@ -180,9 +174,7 @@ synced and their revisions won't be found.
                 self.printText(" not found")
                 self.out.nl()
 
-    def _printLogs(
-        self, project, otherProject, raw=False, color=True, pretty_format=None
-    ):
+    def _printLogs(self, project, otherProject, raw=False, color=True, pretty_format=None):
         logs = project.getAddedAndRemovedLogs(
             otherProject,
             oneline=(pretty_format is None),
@@ -217,26 +209,18 @@ synced and their revisions won't be found.
         if not args or len(args) > 2:
             self.OptionParser.error("missing manifests to diff")
         if opt.this_manifest_only is False:
-            raise self.OptionParser.error(
-                "`diffmanifest` only supports the current tree"
-            )
+            raise self.OptionParser.error("`diffmanifest` only supports the current tree")
 
     def Execute(self, opt, args):
         self.out = _Coloring(self.client.globalConfig)
         self.printText = self.out.nofmt_printer("text")
         if opt.color:
             self.printProject = self.out.nofmt_printer("project", attr="bold")
-            self.printAdded = self.out.nofmt_printer(
-                "green", fg="green", attr="bold"
-            )
-            self.printRemoved = self.out.nofmt_printer(
-                "red", fg="red", attr="bold"
-            )
+            self.printAdded = self.out.nofmt_printer("green", fg="green", attr="bold")
+            self.printRemoved = self.out.nofmt_printer("red", fg="red", attr="bold")
             self.printRevision = self.out.nofmt_printer("revision", fg="yellow")
         else:
-            self.printProject = self.printAdded = self.printRemoved = (
-                self.printRevision
-            ) = self.printText
+            self.printProject = self.printAdded = self.printRemoved = self.printRevision = self.printText
 
         manifest1 = RepoClient(self.repodir)
         manifest1.Override(args[0], load_local_manifests=False)

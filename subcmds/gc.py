@@ -49,13 +49,10 @@ class Gc(Command):
             "--repack",
             default=False,
             action="store_true",
-            help="repack all projects that use partial clone with "
-            "filter=blob:none",
+            help="repack all projects that use partial clone with filter=blob:none",
         )
 
-    def _find_git_to_delete(
-        self, to_keep: Set[str], start_dir: str
-    ) -> Set[str]:
+    def _find_git_to_delete(self, to_keep: Set[str], start_dir: str) -> Set[str]:
         """Searches no longer needed ".git" directories.
 
         Scans the file system starting from `start_dir` and removes all
@@ -83,9 +80,7 @@ class Gc(Command):
             project_paths.add(project.gitdir)
             project_object_paths.add(project.objdir)
 
-        to_delete = self._find_git_to_delete(
-            project_paths, os.path.join(self.repodir, "projects")
-        )
+        to_delete = self._find_git_to_delete(project_paths, os.path.join(self.repodir, "projects"))
 
         to_delete.update(
             self._find_git_to_delete(
@@ -102,10 +97,7 @@ class Gc(Command):
         print("\n".join(to_delete))
         print("")
         if not opt.yes:
-            print(
-                "If you proceed, any local commits in those projects will be "
-                "destroyed!"
-            )
+            print("If you proceed, any local commits in those projects will be destroyed!")
             ask = input("Proceed? [y/N] ")
             if ask.lower() != "y":
                 return 1
@@ -272,17 +264,13 @@ class Gc(Command):
                 pack_dir,
                 os.path.join(project.objdir, "objects", "pack"),
             )
-            platform_utils.rmtree(
-                os.path.join(project.objdir, "objects", "pack_old")
-            )
+            platform_utils.rmtree(os.path.join(project.objdir, "objects", "pack_old"))
 
         pm.end()
         return 0
 
     def Execute(self, opt, args):
-        projects: List[Project] = self.GetProjects(
-            args, all_manifests=not opt.this_manifest_only
-        )
+        projects: List[Project] = self.GetProjects(args, all_manifests=not opt.this_manifest_only)
 
         ret = self.delete_unused_projects(projects, opt)
         if ret != 0:

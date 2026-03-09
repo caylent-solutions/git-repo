@@ -78,9 +78,7 @@ The command is equivalent to:
         err = []
         err_projects = []
         success = []
-        all_projects = self.GetProjects(
-            args[1:], all_manifests=not opt.this_manifest_only
-        )
+        all_projects = self.GetProjects(args[1:], all_manifests=not opt.this_manifest_only)
 
         def _ProcessResults(_pool, pm, results):
             for result in results:
@@ -99,9 +97,7 @@ The command is equivalent to:
                 functools.partial(self._ExecuteOne, nb),
                 range(len(all_projects)),
                 callback=_ProcessResults,
-                output=Progress(
-                    f"Checkout {nb}", len(all_projects), quiet=opt.quiet
-                ),
+                output=Progress(f"Checkout {nb}", len(all_projects), quiet=opt.quiet),
             )
 
         if err_projects:

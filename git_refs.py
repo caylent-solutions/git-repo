@@ -72,9 +72,7 @@ class GitRefs:
         with Trace(": scan refs %s", self._gitdir):
             for name, mtime in self._mtime.items():
                 try:
-                    if mtime != os.path.getmtime(
-                        os.path.join(self._gitdir, name)
-                    ):
+                    if mtime != os.path.getmtime(os.path.join(self._gitdir, name)):
                         return True
                 except OSError:
                     return True

@@ -41,13 +41,9 @@ def symlink(source, link_name):
         link_name = _validate_winpath(link_name)
         target = os.path.join(os.path.dirname(link_name), source)
         if isdir(target):
-            platform_utils_win32.create_dirsymlink(
-                _makelongpath(source), link_name
-            )
+            platform_utils_win32.create_dirsymlink(_makelongpath(source), link_name)
         else:
-            platform_utils_win32.create_filesymlink(
-                _makelongpath(source), link_name
-            )
+            platform_utils_win32.create_filesymlink(_makelongpath(source), link_name)
     else:
         return os.symlink(source, link_name)
 
@@ -56,10 +52,7 @@ def _validate_winpath(path):
     path = os.path.normpath(path)
     if _winpath_is_valid(path):
         return path
-    raise ValueError(
-        f'Path "{path}" must be a relative path or an absolute '
-        "path starting with a drive letter"
-    )
+    raise ValueError(f'Path "{path}" must be a relative path or an absolute path starting with a drive letter')
 
 
 def _winpath_is_valid(path):
@@ -156,11 +149,7 @@ def remove(path, missing_ok=False):
                 os.rmdir(longpath)
             else:
                 os.remove(longpath)
-        elif (
-            e.errno == errno.EROFS
-            and missing_ok
-            and not os.path.exists(longpath)
-        ):
+        elif e.errno == errno.EROFS and missing_ok and not os.path.exists(longpath):
             pass
         elif missing_ok and e.errno == errno.ENOENT:
             pass
@@ -199,9 +188,7 @@ def _walk_windows_impl(top, topdown, onerror, followlinks):
     for name in dirs:
         new_path = os.path.join(top, name)
         if followlinks or not islink(new_path):
-            yield from _walk_windows_impl(
-                new_path, topdown, onerror, followlinks
-            )
+            yield from _walk_windows_impl(new_path, topdown, onerror, followlinks)
     if not topdown:
         yield top, dirs, nondirs
 

@@ -18,12 +18,8 @@ set -euo pipefail
 
 log_info "Running project-specific setup..."
 
-# Add your project setup commands below this line
-# Example:
-# if [ -f "Makefile" ]; then
-#   log_info "Running make configure..."
-#   make configure
-# fi
-log_info "Add project specific setup commands here!"
+# Install required development tools
+log_info "Installing development tools..."
+pip install ruff pytest packaging
 
 log_info "Project-specific setup complete"

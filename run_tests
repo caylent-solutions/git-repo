@@ -46,35 +46,19 @@ def run_pytest(argv: List[str]) -> int:
     ).returncode
 
 
-def run_black():
-    """Returns the exit code from black."""
-    # Black by default only matches .py files.  We have to list standalone
-    # scripts manually.
-    extra_programs = [
-        "repo",
-        "run_tests",
-        "release/update-hooks",
-    ]
+def run_ruff_check():
+    """Returns the exit code from ruff check."""
     return subprocess.run(
-        [sys.executable, "-m", "black", "--check", ROOT_DIR] + extra_programs,
+        [sys.executable, "-m", "ruff", "check", ROOT_DIR],
         check=False,
         cwd=ROOT_DIR,
     ).returncode
 
 
-def run_flake8():
-    """Returns the exit code from flake8."""
+def run_ruff_format():
+    """Returns the exit code from ruff format --check."""
     return subprocess.run(
-        [sys.executable, "-m", "flake8", ROOT_DIR],
-        check=False,
-        cwd=ROOT_DIR,
-    ).returncode
-
-
-def run_isort():
-    """Returns the exit code from isort."""
-    return subprocess.run(
-        [sys.executable, "-m", "isort", "--check", ROOT_DIR],
+        [sys.executable, "-m", "ruff", "format", "--check", ROOT_DIR],
         check=False,
         cwd=ROOT_DIR,
     ).returncode
@@ -84,9 +68,8 @@ def main(argv):
     """The main entry."""
     checks = (
         functools.partial(run_pytest, argv),
-        run_black,
-        run_flake8,
-        run_isort,
+        run_ruff_check,
+        run_ruff_format,
     )
     # Run all the tests all the time to get full feedback.  Don't exit on the
     # first error as that makes it more difficult to iterate in the CQ.

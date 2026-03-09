@@ -13,7 +13,6 @@ obtained by clients during `repo sync`.
 
 [TOC]
 
-
 ## XML File Format
 
 A manifest XML file (e.g. `default.xml`) roughly conforms to the
@@ -142,7 +141,6 @@ corresponding names.
 
 A description of the elements and their attributes follows.
 
-
 ### Element manifest
 
 The root element of the file.
@@ -224,7 +222,6 @@ Attribute `sync-tags`: Set to false to only sync the given Git
 branch (specified in the `revision` attribute) rather than
 the other ref tags.
 
-
 ### Element manifest-server
 
 At most one manifest-server may be specified. The url attribute
@@ -232,7 +229,6 @@ is used to specify the URL of a manifest server, which is an
 XML RPC service.
 
 See the [smart sync documentation](./smart-sync.md) for more details.
-
 
 ### Element submanifest
 
@@ -248,10 +244,8 @@ If not supplied the remote given by the default element is used.
 
 Attribute `project`: The manifest project name.  The project's name is appended
 onto its remote's fetch URL to generate the actual URL to configure the Git
-remote with.  The URL gets formed as:
-
-    ${remote_fetch}/${project_name}.git
-
+remote with.  The URL gets formed as
+`${remote_fetch}/${project_name}.git`
 where ${remote_fetch} is the remote's fetch attribute and
 ${project_name} is the project's name attribute.  The suffix ".git"
 is always appended as repo assumes the upstream is a forest of
@@ -305,10 +299,8 @@ may be overridden by an explicitly specified project element.
 
 Attribute `name`: A unique name for this project.  The project's
 name is appended onto its remote's fetch URL to generate the actual
-URL to configure the Git remote with.  The URL gets formed as:
-
-    ${remote_fetch}/${project_name}.git
-
+URL to configure the Git remote with.  The URL gets formed as
+`${remote_fetch}/${project_name}.git`
 where ${remote_fetch} is the remote's fetch attribute and
 ${project_name} is the project's name attribute.  The suffix ".git"
 is always appended as repo assumes the upstream is a forest of
@@ -575,18 +567,20 @@ files stored in `$TOP_DIR/.repo/local_manifests/*.xml`.
 
 For example:
 
-    $ ls .repo/local_manifests
-    local_manifest.xml
-    another_local_manifest.xml
+```bash
+$ ls .repo/local_manifests
+local_manifest.xml
+another_local_manifest.xml
 
-    $ cat .repo/local_manifests/local_manifest.xml
-    <?xml version="1.0" encoding="UTF-8"?>
-    <manifest>
-      <project path="manifest"
-               name="tools/manifest" />
-      <project path="platform-manifest"
-               name="platform/manifest" />
-    </manifest>
+$ cat .repo/local_manifests/local_manifest.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <project path="manifest"
+           name="tools/manifest" />
+  <project path="platform-manifest"
+           name="platform/manifest" />
+</manifest>
+```
 
 Users may add projects to the local manifest(s) prior to a `repo sync`
 invocation, instructing repo to automatically download and manage
@@ -596,10 +590,9 @@ Manifest files stored in `$TOP_DIR/.repo/local_manifests/*.xml` will
 be loaded in alphabetical order.
 
 Projects from local manifest files are added into
-local::<local manifest filename> group.
+`local::<local manifest filename>` group.
 
 The legacy `$TOP_DIR/.repo/local_manifest.xml` path is no longer supported.
-
 
 [copyfile]: #Element-copyfile
 [linkfile]: #Element-linkfile

@@ -102,9 +102,7 @@ class RepoHook:
 
         # Store the full path to the script for convenience.
         if self._hooks_project:
-            self._script_fullpath = os.path.join(
-                self._hooks_project.worktree, self._hook_type + ".py"
-            )
+            self._script_fullpath = os.path.join(self._hooks_project.worktree, self._hook_type + ".py")
         else:
             self._script_fullpath = None
 
@@ -170,9 +168,7 @@ class RepoHook:
         else:
             return self._CheckForHookApprovalHash()
 
-    def _CheckForHookApprovalHelper(
-        self, subkey, new_val, main_prompt, changed_prompt
-    ):
+    def _CheckForHookApprovalHelper(self, subkey, new_val, main_prompt, changed_prompt):
         """Check for approval for a particular attribute and hook.
 
         Args:
@@ -222,10 +218,7 @@ class RepoHook:
 
         # For anything else, we'll assume no approval.
         if self._abort_if_user_denies:
-            raise HookError(
-                "You must allow the %s hook or use --no-verify."
-                % self._hook_type
-            )
+            raise HookError("You must allow the %s hook or use --no-verify." % self._hook_type)
 
         return False
 
@@ -261,12 +254,7 @@ class RepoHook:
         Returns:
             True if this hook is approved to run; False otherwise.
         """
-        prompt = (
-            "Repo %s run the script:\n"
-            "  %s\n"
-            "\n"
-            "Do you want to allow this script to run"
-        )
+        prompt = "Repo %s run the script:\n  %s\n\nDo you want to allow this script to run"
         return self._CheckForHookApprovalHelper(
             "approvedhash",
             self._GetHash(),
@@ -321,8 +309,7 @@ class RepoHook:
             exec(compile(data, self._script_fullpath, "exec"), context)
         except Exception:
             raise HookError(
-                "%s\nFailed to import %s hook; see traceback above."
-                % (traceback.format_exc(), self._hook_type)
+                "%s\nFailed to import %s hook; see traceback above." % (traceback.format_exc(), self._hook_type)
             )
 
         # Running the script should have defined a main() function.
@@ -336,8 +323,7 @@ class RepoHook:
             context["main"](**kwargs)
         except Exception:
             raise HookError(
-                "%s\nFailed to run main() for %s hook; see traceback "
-                "above." % (traceback.format_exc(), self._hook_type)
+                "%s\nFailed to run main() for %s hook; see traceback above." % (traceback.format_exc(), self._hook_type)
             )
 
     def _ExecuteHook(self, **kwargs):
@@ -396,9 +382,7 @@ class RepoHook:
     def _CheckHook(self):
         # Bail with a nice error if we can't find the hook.
         if not os.path.isfile(self._script_fullpath):
-            raise HookError(
-                "Couldn't find repo hook: %s" % self._script_fullpath
-            )
+            raise HookError("Couldn't find repo hook: %s" % self._script_fullpath)
 
     def Run(self, **kwargs):
         """Run the hook.
@@ -458,8 +442,7 @@ class RepoHook:
         except SystemExit as e:
             passed = False
             print(
-                "ERROR: %s hooks exited with exit code: %s"
-                % (self._hook_type, str(e)),
+                "ERROR: %s hooks exited with exit code: %s" % (self._hook_type, str(e)),
                 file=sys.stderr,
             )
         except HookError as e:
@@ -468,8 +451,7 @@ class RepoHook:
 
         if not passed and self._ignore_hooks:
             print(
-                "\nWARNING: %s hooks failed, but continuing anyways."
-                % self._hook_type,
+                "\nWARNING: %s hooks failed, but continuing anyways." % self._hook_type,
                 file=sys.stderr,
             )
             passed = True
@@ -493,9 +475,7 @@ class RepoHook:
             {
                 "hooks_project": manifest.repo_hooks_project,
                 "repo_topdir": manifest.topdir,
-                "manifest_url": manifest.manifestProject.GetRemote(
-                    "origin"
-                ).url,
+                "manifest_url": manifest.manifestProject.GetRemote("origin").url,
                 "bug_url": manifest.contactinfo.bugurl,
             }
         )

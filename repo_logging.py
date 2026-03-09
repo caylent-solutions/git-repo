@@ -84,9 +84,7 @@ class RepoLogger(logging.Logger):
             "Repo command failed due to the following `%s` errors:",
             type(err).__name__,
         )
-        self.error(
-            "\n".join(str(e) for e in err.aggregate_errors[:MAX_PRINT_ERRORS])
-        )
+        self.error("\n".join(str(e) for e in err.aggregate_errors[:MAX_PRINT_ERRORS]))
 
         diff = len(err.aggregate_errors) - MAX_PRINT_ERRORS
         if diff > 0:

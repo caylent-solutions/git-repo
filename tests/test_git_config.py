@@ -182,9 +182,5 @@ class GitConfigReadWriteTests(unittest.TestCase):
         self.config.UpdateSyncAnalysisState(options, superproject_logging_data)
         sync_data = self.config.GetSyncAnalysisStateData()
         for key, value in TESTS:
-            self.assertEqual(
-                sync_data[f"{git_config.SYNC_STATE_PREFIX}{key}"], value
-            )
-        self.assertTrue(
-            sync_data[f"{git_config.SYNC_STATE_PREFIX}main.synctime"]
-        )
+            self.assertEqual(sync_data[f"{git_config.SYNC_STATE_PREFIX}{key}"], value)
+        self.assertTrue(sync_data[f"{git_config.SYNC_STATE_PREFIX}main.synctime"])

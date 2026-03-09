@@ -37,12 +37,8 @@ class AllCommands(unittest.TestCase):
         self.tempdir = self.tempdirobj.name
         self.repodir = os.path.join(self.tempdir, ".repo")
         self.manifest_dir = os.path.join(self.repodir, "manifests")
-        self.manifest_file = os.path.join(
-            self.repodir, manifest_xml.MANIFEST_FILE_NAME
-        )
-        self.local_manifest_dir = os.path.join(
-            self.repodir, manifest_xml.LOCAL_MANIFESTS_DIR_NAME
-        )
+        self.manifest_file = os.path.join(self.repodir, manifest_xml.MANIFEST_FILE_NAME)
+        self.local_manifest_dir = os.path.join(self.repodir, manifest_xml.LOCAL_MANIFESTS_DIR_NAME)
         os.mkdir(self.repodir)
         os.mkdir(self.manifest_dir)
 
@@ -103,16 +99,8 @@ class AllCommands(unittest.TestCase):
 
         # Set up 8 empty projects to match the manifest
         for x in range(1, 9):
-            os.makedirs(
-                os.path.join(
-                    self.repodir, "projects/tests/path" + str(x) + ".git"
-                )
-            )
-            os.makedirs(
-                os.path.join(
-                    self.repodir, "project-objects/project" + str(x) + ".git"
-                )
-            )
+            os.makedirs(os.path.join(self.repodir, "projects/tests/path" + str(x) + ".git"))
+            os.makedirs(os.path.join(self.repodir, "project-objects/project" + str(x) + ".git"))
             git_path = os.path.join(self.tempdir, "tests/path" + str(x))
             self.initTempGitTree(git_path)
 
@@ -133,9 +121,7 @@ class AllCommands(unittest.TestCase):
         opts.verbose = False
 
         # Mock to not have the Execute fail on remote check
-        with mock.patch.object(
-            project.Project, "GetRevisionId", return_value="refs/heads/main"
-        ):
+        with mock.patch.object(project.Project, "GetRevisionId", return_value="refs/heads/main"):
             # Run the forall command
             cmd.Execute(opts, args)
 

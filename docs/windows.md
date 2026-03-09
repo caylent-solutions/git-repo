@@ -74,8 +74,9 @@ You do not need to run all your commands in here such as your editor.
 
 If you want to use `ln -s` inside of the default Git/bash shell, you might need
 to export this environment variable:
+
 ```sh
-$ export MSYS="winsymlinks:nativestrict"
+export MSYS="winsymlinks:nativestrict"
 ```
 
 Otherwise `ln -s` will copy files and not actually create a symlink.
@@ -83,8 +84,8 @@ This also helps `tar` unpack symlinks, so that's nice.
 
 ### References
 
-* https://github.com/git-for-windows/git/wiki/Symbolic-Links
-* https://blogs.windows.com/windowsdeveloper/2016/12/02/symlinks-windows-10/
+* <https://github.com/git-for-windows/git/wiki/Symbolic-Links>
+* <https://blogs.windows.com/windowsdeveloper/2016/12/02/symlinks-windows-10/>
 
 ## Python
 
@@ -92,13 +93,13 @@ Python 3.6 or newer is required.
 Python 2 is known to be broken when running under Windows.
 See our [Python Support](./python-support.md) document for more details.
 
-You can grab the latest Windows installer here:<br>
-https://www.python.org/downloads/release/python-3
+You can grab the latest Windows installer here:
+<https://www.python.org/downloads/release/python-3>
 
 ## Git
 
-You should install the most recent version of Git for Windows:<br>
-https://git-scm.com/download/win
+You should install the most recent version of Git for Windows:
+<https://git-scm.com/download/win>
 
 When installing, make sure to turn on "Enable symbolic links" when prompted.
 
@@ -118,10 +119,11 @@ Who knows!
 
 ## FAQ
 
-### repo upload always complains about allowing hooks or using --no-verify!
+### repo upload always complains about allowing hooks or using --no-verify
 
 When using `repo upload` in projects that have custom repohooks, you might get
 an error like the following:
+
 ```sh
 $ repo upload
 ERROR: You must allow the pre-upload hook or use --no-verify.
@@ -134,18 +136,20 @@ always fails.
 
 You can workaround this by manually granting consent when uploading.
 Simply add the `--verify` option whenever uploading:
+
 ```sh
-$ repo upload --verify
+repo upload --verify
 ```
 
 You will have to specify this flag every time you upload.
 
 [mintty]: https://github.com/mintty/mintty/issues/56
 
-### repohooks always fail with an close_fds error.
+### repohooks always fail with an close_fds error
 
 When using the [reference repohooks project][repohooks] included in AOSP,
 you might see errors like this when running `repo upload`:
+
 ```sh
 $ repo upload
 ERROR: Traceback (most recent call last):

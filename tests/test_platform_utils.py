@@ -34,9 +34,7 @@ class RemoveTests(unittest.TestCase):
 
             # Should fail.
             self.assertRaises(OSError, platform_utils.remove, path)
-            self.assertRaises(
-                OSError, platform_utils.remove, path, missing_ok=False
-            )
+            self.assertRaises(OSError, platform_utils.remove, path, missing_ok=False)
 
             # Should not fail if it exists.
             open(path, "w").close()

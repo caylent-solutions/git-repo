@@ -37,21 +37,16 @@ def fetch_file(url, verbose=False):
         cmd = ["gsutil", "cat", url]
         errors = []
         try:
-            result = subprocess.run(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
-            )
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
             if result.stderr and verbose:
                 print(
-                    'warning: non-fatal error running "gsutil": %s'
-                    % result.stderr,
+                    'warning: non-fatal error running "gsutil": %s' % result.stderr,
                     file=sys.stderr,
                 )
             return result.stdout
         except subprocess.CalledProcessError as e:
             errors.append(e)
-            print(
-                'fatal: error running "gsutil": %s' % e.stderr, file=sys.stderr
-            )
+            print('fatal: error running "gsutil": %s' % e.stderr, file=sys.stderr)
         raise FetchFileError(aggregate_errors=errors)
     with urlopen(url) as f:
         return f.read()

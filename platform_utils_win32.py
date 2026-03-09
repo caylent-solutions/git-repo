@@ -207,9 +207,7 @@ def readlink(path):
         None,
     )
     if reparse_point_handle == INVALID_HANDLE_VALUE:
-        _raise_winerror(
-            get_last_error(), f'Error opening symbolic link "{path}"'
-        )
+        _raise_winerror(get_last_error(), f'Error opening symbolic link "{path}"')
     target_buffer = c_buffer(MAXIMUM_REPARSE_DATA_BUFFER_SIZE)
     n_bytes_returned = DWORD()
     io_result = DeviceIoControl(
@@ -224,18 +222,14 @@ def readlink(path):
     )
     CloseHandle(reparse_point_handle)
     if not io_result:
-        _raise_winerror(
-            get_last_error(), f'Error reading symbolic link "{path}"'
-        )
+        _raise_winerror(get_last_error(), f'Error reading symbolic link "{path}"')
     rdb = REPARSE_DATA_BUFFER.from_buffer(target_buffer)
     if rdb.ReparseTag == IO_REPARSE_TAG_SYMLINK:
         return rdb.SymbolicLinkReparseBuffer.PrintName
     elif rdb.ReparseTag == IO_REPARSE_TAG_MOUNT_POINT:
         return rdb.MountPointReparseBuffer.PrintName
     # Unsupported reparse point type.
-    _raise_winerror(
-        ERROR_NOT_SUPPORTED, f'Error reading symbolic link "{path}"'
-    )
+    _raise_winerror(ERROR_NOT_SUPPORTED, f'Error reading symbolic link "{path}"')
 
 
 def _raise_winerror(code, error_desc):

@@ -100,9 +100,7 @@ class Trace(contextlib.ContextDecorator):
         if not IsTrace():
             return self
 
-        print_msg = (
-            f"PID: {os.getpid()} START: {self._time()} :{self._trace_msg}\n"
-        )
+        print_msg = f"PID: {os.getpid()} START: {self._time()} :{self._trace_msg}\n"
 
         with open(_TRACE_FILE, "a") as f:
             print(print_msg, file=f)
@@ -116,9 +114,7 @@ class Trace(contextlib.ContextDecorator):
         if not IsTrace():
             return False
 
-        print_msg = (
-            f"PID: {os.getpid()} END: {self._time()} :{self._trace_msg}\n"
-        )
+        print_msg = f"PID: {os.getpid()} END: {self._time()} :{self._trace_msg}\n"
 
         with open(_TRACE_FILE, "a") as f:
             print(print_msg, file=f)
@@ -167,8 +163,6 @@ def _ClearOldTraces():
     # Write to a temporary file with a unique name in the same filesystem
     # before replacing the original trace file.
     temp_dir, temp_prefix = os.path.split(_TRACE_FILE)
-    with tempfile.NamedTemporaryFile(
-        "w", dir=temp_dir, prefix=temp_prefix, delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile("w", dir=temp_dir, prefix=temp_prefix, delete=False) as f:
         f.writelines(trace_lines)
     platform_utils.rename(f.name, _TRACE_FILE)

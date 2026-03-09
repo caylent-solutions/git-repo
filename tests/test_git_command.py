@@ -34,35 +34,25 @@ class GitCommandTest(unittest.TestCase):
         def realpath_mock(val):
             return val
 
-        mock.patch.object(
-            os.path, "realpath", side_effect=realpath_mock
-        ).start()
+        mock.patch.object(os.path, "realpath", side_effect=realpath_mock).start()
 
     def tearDown(self):
         mock.patch.stopall()
 
     def test_alternative_setting_when_matching(self):
-        r = git_command._build_env(
-            objdir=os.path.join("zap", "objects"), gitdir="zap"
-        )
+        r = git_command._build_env(objdir=os.path.join("zap", "objects"), gitdir="zap")
 
         self.assertIsNone(r.get("GIT_ALTERNATE_OBJECT_DIRECTORIES"))
-        self.assertEqual(
-            r.get("GIT_OBJECT_DIRECTORY"), os.path.join("zap", "objects")
-        )
+        self.assertEqual(r.get("GIT_OBJECT_DIRECTORY"), os.path.join("zap", "objects"))
 
     def test_alternative_setting_when_different(self):
-        r = git_command._build_env(
-            objdir=os.path.join("wow", "objects"), gitdir="zap"
-        )
+        r = git_command._build_env(objdir=os.path.join("wow", "objects"), gitdir="zap")
 
         self.assertEqual(
             r.get("GIT_ALTERNATE_OBJECT_DIRECTORIES"),
             os.path.join("zap", "objects"),
         )
-        self.assertEqual(
-            r.get("GIT_OBJECT_DIRECTORY"), os.path.join("wow", "objects")
-        )
+        self.assertEqual(r.get("GIT_OBJECT_DIRECTORY"), os.path.join("wow", "objects"))
 
 
 class GitCommandWaitTest(unittest.TestCase):
@@ -76,9 +66,7 @@ class GitCommandWaitTest(unittest.TestCase):
                 self.stdout = io.BufferedReader(io.BytesIO())
                 self.stderr = io.BufferedReader(io.BytesIO())
 
-            def communicate(
-                self, input: str = None, timeout: float = None
-            ) -> [str, str]:
+            def communicate(self, input: str = None, timeout: float = None) -> [str, str]:
                 """Mock communicate fn."""
                 return ["", ""]
 
@@ -95,9 +83,7 @@ class GitCommandWaitTest(unittest.TestCase):
 
         mock.patch.object(subprocess, "Popen", side_effect=popen_mock).start()
 
-        mock.patch.object(
-            os.path, "realpath", side_effect=realpath_mock
-        ).start()
+        mock.patch.object(os.path, "realpath", side_effect=realpath_mock).start()
 
     def tearDown(self):
         mock.patch.stopall()
@@ -209,9 +195,7 @@ class GitCommandStreamLogsTest(unittest.TestCase):
                 "remote: SUCCESS",
             ]
         )
-        self.mock_process.stderr = io.BufferedReader(
-            io.BytesIO(bytes(logs, "utf-8"))
-        )
+        self.mock_process.stderr = io.BufferedReader(io.BytesIO(bytes(logs, "utf-8")))
 
         cmd = git_command.GitCommand(None, ["push"])
 
@@ -290,9 +274,7 @@ class GitRequireTests(unittest.TestCase):
     def setUp(self):
         self.wrapper = wrapper.Wrapper()
         ver = self.wrapper.GitVersion(1, 2, 3, 4)
-        mock.patch.object(
-            git_command.git, "version_tuple", return_value=ver
-        ).start()
+        mock.patch.object(git_command.git, "version_tuple", return_value=ver).start()
 
     def tearDown(self):
         mock.patch.stopall()
@@ -334,15 +316,11 @@ class GitCommandErrorTest(unittest.TestCase):
 
     def test_augument_stderr(self):
         self.assertEqual(
-            git_command.GitCommandError(
-                git_stderr="couldn't find remote ref refs/heads/foo"
-            ).suggestion,
+            git_command.GitCommandError(git_stderr="couldn't find remote ref refs/heads/foo").suggestion,
             "Check if the provided ref exists in the remote.",
         )
 
         self.assertEqual(
-            git_command.GitCommandError(
-                git_stderr="'foobar' does not appear to be a git repository"
-            ).suggestion,
+            git_command.GitCommandError(git_stderr="'foobar' does not appear to be a git repository").suggestion,
             "Are you running this repo command outside of a repo workspace?",
         )

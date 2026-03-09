@@ -72,22 +72,11 @@ def _VerifyPendingCommits(branches: List[ReviewableBranch]) -> bool:
     # If any branch has many commits, prompt the user.
     if many_commits:
         if len(branches) > 1:
-            logger.warning(
-                "ATTENTION: One or more branches has an unusually high number "
-                "of commits."
-            )
+            logger.warning("ATTENTION: One or more branches has an unusually high number of commits.")
         else:
-            logger.warning(
-                "ATTENTION: You are uploading an unusually high number of "
-                "commits."
-            )
-        logger.warning(
-            "YOU PROBABLY DO NOT MEAN TO DO THIS. (Did you rebase across "
-            "branches?)"
-        )
-        answer = input(
-            "If you are sure you intend to do this, type 'yes': "
-        ).strip()
+            logger.warning("ATTENTION: You are uploading an unusually high number of commits.")
+        logger.warning("YOU PROBABLY DO NOT MEAN TO DO THIS. (Did you rebase across branches?)")
+        answer = input("If you are sure you intend to do this, type 'yes': ").strip()
         return answer == "yes"
 
     return True
@@ -395,9 +384,7 @@ Gerrit Code Review:  https://www.gerritcodereview.com/
             date = branch.date
             commit_list = branch.commits
 
-            destination = (
-                opt.dest_branch or project.dest_branch or project.revisionExpr
-            )
+            destination = opt.dest_branch or project.dest_branch or project.revisionExpr
             print(
                 "Upload project %s/ to remote branch %s%s:"
                 % (
@@ -455,11 +442,7 @@ Gerrit Code Review:  https://www.gerritcodereview.com/
 
                 if b:
                     script.append("#")
-                destination = (
-                    opt.dest_branch
-                    or project.dest_branch
-                    or project.revisionExpr
-                )
+                destination = opt.dest_branch or project.dest_branch or project.revisionExpr
                 script.append(
                     "#  branch %s (%2d commit%s, %s) to remote branch %s:"
                     % (
@@ -592,9 +575,7 @@ Gerrit Code Review:  https://www.gerritcodereview.com/
         destination = opt.dest_branch or branch.project.dest_branch
 
         if branch.project.dest_branch and not opt.dest_branch:
-            merge_branch = self._GetMergeBranch(
-                branch.project, local_branch=branch.name
-            )
+            merge_branch = self._GetMergeBranch(branch.project, local_branch=branch.name)
 
             full_dest = destination
             if not full_dest.startswith(R_HEADS):
@@ -606,21 +587,14 @@ Gerrit Code Review:  https://www.gerritcodereview.com/
             # If the merge branch of the local branch is different from
             # the project's revision AND destination, this might not be
             # intentional.
-            if (
-                merge_branch
-                and merge_branch != full_revision
-                and merge_branch != full_dest
-            ):
+            if merge_branch and merge_branch != full_revision and merge_branch != full_dest:
                 print(
                     f"For local branch {branch.name}: merge branch "
                     f"{merge_branch} does not match destination branch "
                     f"{destination} and revision {branch.project.revisionExpr}"
                 )
                 print("skipping upload.")
-                print(
-                    f"Please use `--destination {destination}` if this "
-                    "is intentional"
-                )
+                print(f"Please use `--destination {destination}` if this is intentional")
                 branch.uploaded = False
                 return
 
@@ -678,8 +652,7 @@ Gerrit Code Review:  https://www.gerritcodereview.com/
                     print(
                         ("[FAILED] %-15s %-15s" + fmt)
                         % (
-                            branch.project.RelPath(local=opt.this_manifest_only)
-                            + "/",
+                            branch.project.RelPath(local=opt.this_manifest_only) + "/",
                             branch.name,
                             str(branch.error),
                         ),
@@ -692,8 +665,7 @@ Gerrit Code Review:  https://www.gerritcodereview.com/
                 print(
                     "[OK    ] %-15s %s"
                     % (
-                        branch.project.RelPath(local=opt.this_manifest_only)
-                        + "/",
+                        branch.project.RelPath(local=opt.this_manifest_only) + "/",
                         branch.name,
                     ),
                     file=sys.stderr,
@@ -735,9 +707,7 @@ Gerrit Code Review:  https://www.gerritcodereview.com/
         return (project_idx, avail)
 
     def Execute(self, opt, args):
-        projects = self.GetProjects(
-            args, all_manifests=not opt.this_manifest_only
-        )
+        projects = self.GetProjects(args, all_manifests=not opt.this_manifest_only)
 
         def _ProcessResults(_pool, _out, results):
             pending = []
@@ -776,21 +746,14 @@ Gerrit Code Review:  https://www.gerritcodereview.com/
                 )
             return 1
 
-        manifests = {
-            project.manifest.topdir: project.manifest
-            for (project, available) in pending
-        }
+        manifests = {project.manifest.topdir: project.manifest for (project, available) in pending}
         ret = 0
         for manifest in manifests.values():
             pending_proj_names = [
-                project.name
-                for (project, available) in pending
-                if project.manifest.topdir == manifest.topdir
+                project.name for (project, available) in pending if project.manifest.topdir == manifest.topdir
             ]
             pending_worktrees = [
-                project.worktree
-                for (project, available) in pending
-                if project.manifest.topdir == manifest.topdir
+                project.worktree for (project, available) in pending if project.manifest.topdir == manifest.topdir
             ]
             hook = RepoHook.FromSubcmd(
                 hook_type="pre-upload",
@@ -798,13 +761,10 @@ Gerrit Code Review:  https://www.gerritcodereview.com/
                 opt=opt,
                 abort_if_user_denies=True,
             )
-            if not hook.Run(
-                project_list=pending_proj_names, worktree_list=pending_worktrees
-            ):
+            if not hook.Run(project_list=pending_proj_names, worktree_list=pending_worktrees):
                 if LocalSyncState(manifest).IsPartiallySynced():
                     logger.error(
-                        "Partially synced tree detected. Syncing all projects "
-                        "may resolve issues you're seeing."
+                        "Partially synced tree detected. Syncing all projects may resolve issues you're seeing."
                     )
                 ret = 1
         if ret:

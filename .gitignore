@@ -20,3 +20,6 @@ devcontainer-environment-variables.json
 .coverage
 
 .devcontainer/ssh-private-key
+
+# Claude Code local settings
+.claude/settings.local.json

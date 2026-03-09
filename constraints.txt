@@ -1,2 +1,2 @@
 # NB: Keep in sync with run_tests.vpython3.
-black<26
+ruff>=0.4.0

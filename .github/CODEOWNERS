@@ -1,0 +1,7 @@
+# CODEOWNERS for git-repo (Caylent fork)
+#
+# These owners are required reviewers for pull requests that modify
+# matching paths. Requires "Require review from Code Owners" in the
+# branch ruleset for enforcement.
+
+* @matt-dresden-caylent

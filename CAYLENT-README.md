@@ -12,6 +12,8 @@ This is Caylent's fork of the Android repo tool with custom enhancements.
   - [Important: GPG Verification](#important-gpg-verification)
 - [New Features](#new-features)
   - [Environment Variable Substitution (envsubst)](#environment-variable-substitution-envsubst)
+  - [Absolute Linkfile Destination](#absolute-linkfile-destination)
+  - [PEP 440 Version Constraints](#pep-440-version-constraints)
 - [Development](#development)
   - [Setup](#setup)
   - [Running Tests](#running-tests)
@@ -30,9 +32,11 @@ pip install git+https://github.com/caylent-solutions/git-repo@$(curl -s https://
 repo init -u <YOUR_MANIFEST_URL> --no-repo-verify
 ```
 
-During `repo init`, it will automatically fetch and use the latest `caylent-*` tag from GitHub.
+During `repo init`, it will automatically fetch and use
+the latest `caylent-*` tag from GitHub.
 
 **To uninstall:**
+
 ```bash
 pip uninstall -y repo
 ```
@@ -43,13 +47,13 @@ For production environments, pin to a specific tag to ensure consistency:
 
 ```bash
 # Install specific tag
-pip install git+https://github.com/caylent-solutions/git-repo@caylent-0.1.2
+pip install git+https://github.com/caylent-solutions/git-repo@caylent-2.0.0
 
 # Initialize with the same pinned tag
-repo init -u <YOUR_MANIFEST_URL> --repo-rev=caylent-0.1.2 --no-repo-verify
+repo init -u <YOUR_MANIFEST_URL> --repo-rev=caylent-2.0.0 --no-repo-verify
 ```
 
-Replace `caylent-0.1.2` with your desired version.
+Replace `caylent-2.0.0` with your desired version.
 
 ### Override Repository URL or Version
 
@@ -73,19 +77,24 @@ repo init -u <YOUR_MANIFEST_URL> \
   --no-repo-verify
 ```
 
-Replace `<ref>` with a tag (e.g., `caylent-0.1.2`), branch (e.g., `main`), or commit hash.
+Replace `<ref>` with a tag (e.g., `caylent-2.0.0`),
+branch (e.g., `main`), or commit hash.
 
 ## Usage
 
-### Important: GPG Verification
+### Important: GPG Verification (Temporary Workaround)
 
-Currently, Caylent tags are not GPG-signed. You **must** use the `--no-repo-verify` flag when running `repo init`:
+Currently, Caylent tags are not GPG-signed. Until GPG signing is implemented,
+you **must** use the `--no-repo-verify` flag when running `repo init`:
 
 ```sh
 repo init -u <manifest-url> --no-repo-verify
 ```
 
-**Note:** GPG signing support will be added in a future release. Track progress in the `.amazonq/prompts/add-gpg-signing.md` file.
+**This is a temporary workaround.** The `--no-repo-verify` flag bypasses GPG
+signature verification, which is a security check. GPG signing for release tags
+is planned. Once implemented, the `--no-repo-verify` flag will no longer be
+required and should be removed from all installation commands.
 
 ### Example
 
@@ -125,6 +134,7 @@ repo envsubst
 ```
 
 **Result:**
+
 ```xml
 <manifest>
   <remote name="origin" 
@@ -141,12 +151,70 @@ The command replaces all `${VARIABLE}` placeholders in:
 - Text content
 - Any XML element in manifest files under `.repo/manifests/`
 
+### Absolute Linkfile Destination
+
+The `<linkfile>` element's `dest` attribute now supports absolute paths after
+`repo envsubst` resolution. This enables symlinks to directories outside the
+project tree — for example, creating marketplace symlinks in `$HOME`.
+
+```xml
+<!-- Before envsubst -->
+<project name="my-plugins" path=".packages/my-plugins" remote="origin"
+         revision="refs/tags/tools/1.0.0">
+  <linkfile src="common/tools"
+            dest="${CLAUDE_MARKETPLACES_DIR}/my-plugins-tools" />
+</project>
+```
+
+After `repo envsubst` resolves `${CLAUDE_MARKETPLACES_DIR}` to an absolute path
+(e.g., `/home/vscode/.claude-marketplaces`), `repo sync` creates the symlink at
+that absolute location, including any necessary parent directories.
+
+- **`linkfile`** permits absolute `dest` paths after envsubst
+- **`copyfile`** remains restricted to relative paths within the project tree
+- Absolute paths are still validated: `..`, `.git`, `.repo`, and unsafe Unicode
+  codepoints are rejected
+
+See `docs/manifest-format.md` for full details.
+
+### PEP 440 Version Constraints
+
+The `revision` attribute in `<project>` entries now supports PEP 440-compatible
+version constraints in addition to exact tag references. During `repo sync`, the
+fork scans available tags matching the tag prefix, evaluates the constraint, and
+checks out the highest matching version.
+
+```xml
+<!-- Exact pin (existing behavior) -->
+<project name="my-repo" revision="refs/tags/tools/1.2.3" ... />
+
+<!-- Patch-compatible: highest 1.2.x -->
+<project name="my-repo" revision="refs/tags/tools/~=1.2.0" ... />
+
+<!-- Minor-compatible: highest 1.x where x >= 2 -->
+<project name="my-repo" revision="refs/tags/tools/~=1.2" ... />
+
+<!-- Latest available version -->
+<project name="my-repo" revision="refs/tags/tools/*" ... />
+
+<!-- Range constraint -->
+<project name="my-repo" revision="refs/tags/tools/>=1.0.0,<2.0.0" ... />
+```
+
+Supported constraint syntax follows [PEP 440](https://peps.python.org/pep-0440/):
+`~=` (compatible release), `>=`, `<=`, `>`, `<`, `!=`, `==`, and `*` (wildcard).
+
+This feature requires the `packaging` Python library, which is included as an
+install dependency.
+
 ## Caylent Enhancements
 
 - Automatic detection of latest `caylent-*` tag during initialization
 - Improved trace file handling for non-writable directories
-- Environment variable substitution in manifest files
-- Custom bug tracking: https://github.com/caylent-solutions/git-repo/issues
+- Environment variable substitution in manifest files (`repo envsubst`)
+- Absolute `<linkfile dest>` paths after `repo envsubst` resolution
+- PEP 440 version constraints in `<project revision>` attributes
+- Custom bug tracking: <https://github.com/caylent-solutions/git-repo/issues>
 
 ## Development
 
@@ -159,7 +227,21 @@ cd git-repo
 
 # Install development dependencies
 pip install -r requirements-dev.txt
+
+# Install ruff (Python linter and formatter)
+pip install ruff
 ```
+
+**Required development tools:**
+
+| Tool | Purpose | Install |
+|---|---|---|
+| `python3` | Runtime | OS package manager |
+| `ruff` | Python linting and formatting | `pip install ruff` |
+| `pytest` | Test runner | `pip install pytest` |
+
+All tools are required. Tests that validate linter configurations will fail
+fast with a clear error if any tool is missing.
 
 ### Running Tests
 
@@ -174,9 +256,10 @@ tox
 ### Creating a Release
 
 1. Update version and create a semver tag:
+
    ```bash
-   git tag -a caylent-0.1.3 -m "Release caylent-0.1.3"
-   git push origin caylent-0.1.3
+   git tag -a caylent-X.Y.Z -m "Release caylent-X.Y.Z"
+   git push origin caylent-X.Y.Z
    ```
 
 2. Users can then install using the tag as shown in the installation section above.
@@ -193,6 +276,11 @@ git merge upstream/main
 
 ## Releases
 
-Latest release: `caylent-0.1.2`
+Latest release: `caylent-2.0.0`
 
-View all releases: https://github.com/caylent-solutions/git-repo/tags
+View all releases: <https://github.com/caylent-solutions/git-repo/tags>
+
+## License
+
+This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE)
+for the full license text.

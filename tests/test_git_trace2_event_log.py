@@ -74,9 +74,7 @@ class EventLogTestCase(unittest.TestCase):
         self._event_log_module = git_trace2_event_log.EventLog(env=env)
         self._log_data = None
 
-    def verifyCommonKeys(
-        self, log_entry, expected_event_name=None, full_sid=True
-    ):
+    def verifyCommonKeys(self, log_entry, expected_event_name=None, full_sid=True):
         """Helper function to verify common event log keys."""
         self.assertIn("event", log_entry)
         self.assertIn("sid", log_entry)
@@ -90,9 +88,7 @@ class EventLogTestCase(unittest.TestCase):
             self.assertRegex(log_entry["sid"], self.FULL_SID_REGEX)
         else:
             self.assertRegex(log_entry["sid"], self.SELF_SID_REGEX)
-        self.assertRegex(
-            log_entry["time"], r"^\d+-\d+-\d+T\d+:\d+:\d+\.\d+\+00:00$"
-        )
+        self.assertRegex(log_entry["time"], r"^\d+-\d+-\d+T\d+:\d+:\d+\.\d+\+00:00$")
 
     def readLog(self, log_path):
         """Helper function to read log data into a list."""
@@ -213,9 +209,7 @@ class EventLogTestCase(unittest.TestCase):
         <version event>
         <command event>
         """
-        self._event_log_module.CommandEvent(
-            name="repo", subcommands=["init", "this"]
-        )
+        self._event_log_module.CommandEvent(name="repo", subcommands=["init", "this"])
         with tempfile.TemporaryDirectory(prefix="event_log_tests") as tempdir:
             log_path = self._event_log_module.Write(path=tempdir)
             self._log_data = self.readLog(log_path)
@@ -310,9 +304,7 @@ class EventLogTestCase(unittest.TestCase):
             key = event["key"]
             key = self.remove_prefix(key, f"{prefix_value}/")
             value = event["value"]
-            self.assertEqual(
-                self._event_log_module.GetDataEventName(value), event["event"]
-            )
+            self.assertEqual(self._event_log_module.GetDataEventName(value), event["event"])
             self.assertTrue(key in config and value == config[key])
 
     def test_error_event(self):
@@ -352,15 +344,11 @@ class EventLogTestCase(unittest.TestCase):
                 "_GetEventTargetPath",
                 return_value=tempdir,
             ):
-                self.assertEqual(
-                    os.path.dirname(self._event_log_module.Write()), tempdir
-                )
+                self.assertEqual(os.path.dirname(self._event_log_module.Write()), tempdir)
 
     def test_write_no_git_config(self):
         """Test Write() with no git config variable present exits with None."""
-        with mock.patch.object(
-            self._event_log_module, "_GetEventTargetPath", return_value=None
-        ):
+        with mock.patch.object(self._event_log_module, "_GetEventTargetPath", return_value=None):
             self.assertIsNone(self._event_log_module.Write())
 
     def test_write_non_string(self):
@@ -372,9 +360,7 @@ class EventLogTestCase(unittest.TestCase):
         """Test Write() with Unix domain socket for |path| and validate received
         traces."""
         received_traces = []
-        with tempfile.TemporaryDirectory(
-            prefix="test_server_sockets"
-        ) as tempdir:
+        with tempfile.TemporaryDirectory(prefix="test_server_sockets") as tempdir:
             socket_path = os.path.join(tempdir, "server.sock")
             server_ready = threading.Condition()
             # Start "server" listening on Unix domain socket at socket_path.
@@ -389,9 +375,7 @@ class EventLogTestCase(unittest.TestCase):
                     server_ready.wait(timeout=5)
 
                 self._event_log_module.StartEvent([])
-                path = self._event_log_module.Write(
-                    path=f"af_unix:{socket_path}"
-                )
+                path = self._event_log_module.Write(path=f"af_unix:{socket_path}")
             finally:
                 server_thread.join(timeout=2)
                 if server_thread.is_alive():

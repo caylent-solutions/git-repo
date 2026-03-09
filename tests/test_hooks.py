@@ -38,9 +38,7 @@ class RepoHookShebang(unittest.TestCase):
             ("#! /usr/foo -args", "/usr/foo"),
         )
         for shebang, interp in DATA:
-            self.assertEqual(
-                hooks.RepoHook._ExtractInterpFromShebang(shebang), interp
-            )
+            self.assertEqual(hooks.RepoHook._ExtractInterpFromShebang(shebang), interp)
 
     def test_env_interp(self):
         """Lines whose shebang launches through `env`."""
@@ -50,6 +48,4 @@ class RepoHookShebang(unittest.TestCase):
             ("#! /bin/env /bin/foo ", "/bin/foo"),
         )
         for shebang, interp in DATA:
-            self.assertEqual(
-                hooks.RepoHook._ExtractInterpFromShebang(shebang), interp
-            )
+            self.assertEqual(hooks.RepoHook._ExtractInterpFromShebang(shebang), interp)

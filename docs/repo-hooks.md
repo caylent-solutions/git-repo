@@ -11,15 +11,15 @@ These are useful to run linters, check formatting, and run quick unittests
 before allowing a step to proceed (e.g. before uploading a commit to Gerrit).
 
 A complete example can be found in the Android project.  It can be easily
-re-used by any repo based project and is not specific to Android.<br>
-https://android.googlesource.com/platform/tools/repohooks
+re-used by any repo based project and is not specific to Android.
+<https://android.googlesource.com/platform/tools/repohooks>
 
 ## Approvals
 
 When a hook is processed the first time, the user is prompted for approval.
 We don't want to execute arbitrary code without explicit consent.  For manifests
-fetched via secure protocols (e.g. https://), the user is prompted once.  For
-insecure protocols (e.g. http://), the user is prompted whenever the registered
+fetched via secure protocols (e.g. `https://`), the user is prompted once.  For
+insecure protocols (e.g. `http://`), the user is prompted whenever the registered
 repohooks project is updated and a hook is triggered.
 
 ## Manifest Settings
@@ -138,11 +138,12 @@ def main(project_list, worktree_list=None, **kwargs):
 
 This hook runs when `repo sync` completes without errors.
 
-Note: This includes cases where no actual checkout may occur. The hook will still run.
+Note: This includes cases where no actual checkout may occur.
+The hook will still run.
 For example:
-- `repo sync -n` performs network fetches only and skips the checkout phase.
-- `repo sync <project>` only updates the specified project(s).
-- Partial failures may still result in a successful exit.
+* `repo sync -n` performs network fetches only and skips the checkout phase.
+* `repo sync <project>` only updates the specified project(s).
+* Partial failures may still result in a successful exit.
 
 This hook is useful for post-processing tasks such as setting up git hooks,
 bootstrapping configuration files, or running project initialization logic.

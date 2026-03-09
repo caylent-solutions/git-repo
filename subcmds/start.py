@@ -94,9 +94,7 @@ revision specified in the manifest.
                 branch_merge = default_revisionExpr
 
         try:
-            project.StartBranch(
-                nb, branch_merge=branch_merge, revision=revision
-            )
+            project.StartBranch(nb, branch_merge=branch_merge, revision=revision)
         except Exception as e:
             logger.error("error: unable to checkout %s: %s", project.name, e)
             error = e
@@ -137,9 +135,7 @@ revision specified in the manifest.
                 ),
                 range(len(all_projects)),
                 callback=_ProcessResults,
-                output=Progress(
-                    f"Starting {nb}", len(all_projects), quiet=opt.quiet
-                ),
+                output=Progress(f"Starting {nb}", len(all_projects), quiet=opt.quiet),
                 chunksize=1,
             )
 
@@ -151,7 +147,5 @@ revision specified in the manifest.
                     nb,
                 )
             msg_fmt = "cannot start %d project(s)"
-            self.git_event_log.ErrorEvent(
-                msg_fmt % (len(err_projects)), msg_fmt
-            )
+            self.git_event_log.ErrorEvent(msg_fmt % (len(err_projects)), msg_fmt)
             raise StartError(aggregate_errors=err)

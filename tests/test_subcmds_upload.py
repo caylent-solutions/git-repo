@@ -34,9 +34,7 @@ class UploadCommand(unittest.TestCase):
         self.branch = mock.MagicMock()
         self.people = mock.MagicMock()
         self.opt, _ = self.cmd.OptionParser.parse_args([])
-        mock.patch.object(
-            self.cmd, "_AppendAutoList", return_value=None
-        ).start()
+        mock.patch.object(self.cmd, "_AppendAutoList", return_value=None).start()
         mock.patch.object(self.cmd, "git_event_log").start()
 
     def tearDown(self):
@@ -45,26 +43,20 @@ class UploadCommand(unittest.TestCase):
     def test_UploadAndReport_UploadError(self):
         """Check UploadExitError raised when UploadError encountered."""
         side_effect = UploadError("upload error")
-        with mock.patch.object(
-            self.cmd, "_UploadBranch", side_effect=side_effect
-        ):
+        with mock.patch.object(self.cmd, "_UploadBranch", side_effect=side_effect):
             with self.assertRaises(upload.UploadExitError):
                 self.cmd._UploadAndReport(self.opt, [self.branch], self.people)
 
     def test_UploadAndReport_GitError(self):
         """Check UploadExitError raised when GitError encountered."""
         side_effect = GitError("some git error")
-        with mock.patch.object(
-            self.cmd, "_UploadBranch", side_effect=side_effect
-        ):
+        with mock.patch.object(self.cmd, "_UploadBranch", side_effect=side_effect):
             with self.assertRaises(upload.UploadExitError):
                 self.cmd._UploadAndReport(self.opt, [self.branch], self.people)
 
     def test_UploadAndReport_UnhandledError(self):
         """Check UnexpectedError passed through."""
         side_effect = UnexpectedError("some os error")
-        with mock.patch.object(
-            self.cmd, "_UploadBranch", side_effect=side_effect
-        ):
+        with mock.patch.object(self.cmd, "_UploadBranch", side_effect=side_effect):
             with self.assertRaises(type(side_effect)):
                 self.cmd._UploadAndReport(self.opt, [self.branch], self.people)

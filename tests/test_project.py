@@ -55,12 +55,8 @@ class FakeProject:
         self.worktree = worktree
         self.gitdir = os.path.join(worktree, ".git")
         self.name = "fakeproject"
-        self.work_git = project.Project._GitGetByExec(
-            self, bare=False, gitdir=self.gitdir
-        )
-        self.bare_git = project.Project._GitGetByExec(
-            self, bare=True, gitdir=self.gitdir
-        )
+        self.work_git = project.Project._GitGetByExec(self, bare=False, gitdir=self.gitdir)
+        self.bare_git = project.Project._GitGetByExec(self, bare=True, gitdir=self.gitdir)
         self.config = git_config.GitConfig.ForRepository(gitdir=self.gitdir)
 
 
@@ -82,9 +78,7 @@ class ReviewableBranchTests(unittest.TestCase):
             fakeproj.work_git.commit("-mDel file")
 
             # Start off with the normal details.
-            rb = project.ReviewableBranch(
-                fakeproj, fakeproj.config.GetBranch("work"), "main"
-            )
+            rb = project.ReviewableBranch(fakeproj, fakeproj.config.GetBranch("work"), "main")
             self.assertEqual("work", rb.name)
             self.assertEqual(1, len(rb.commits))
             self.assertIn("Del file", rb.commits[0])
@@ -98,9 +92,7 @@ class ReviewableBranchTests(unittest.TestCase):
 
             # Now delete the tracking branch!
             fakeproj.work_git.branch("-D", "main")
-            rb = project.ReviewableBranch(
-                fakeproj, fakeproj.config.GetBranch("work"), "main"
-            )
+            rb = project.ReviewableBranch(fakeproj, fakeproj.config.GetBranch("work"), "main")
             self.assertEqual(0, len(rb.commits))
             self.assertFalse(rb.base_exists)
             # Hard to assert anything useful about this.
@@ -259,9 +251,7 @@ class CopyFile(CopyLinkTestCase):
         """Do not allow writing through a symlink dir."""
         src = os.path.join(self.worktree, "foo.txt")
         self.touch(src)
-        platform_utils.symlink(
-            tempfile.gettempdir(), os.path.join(self.topdir, "sym")
-        )
+        platform_utils.symlink(tempfile.gettempdir(), os.path.join(self.topdir, "sym"))
         cf = self.CopyFile("foo.txt", "sym/foo.txt")
         self.assertRaises(error.ManifestInvalidPathError, cf._Copy)
 
@@ -289,9 +279,7 @@ class LinkFile(CopyLinkTestCase):
         dest = os.path.join(self.topdir, "foo")
         self.assertExists(dest)
         self.assertTrue(os.path.islink(dest))
-        self.assertEqual(
-            os.path.join("git-project", "foo.txt"), os.readlink(dest)
-        )
+        self.assertEqual(os.path.join("git-project", "foo.txt"), os.readlink(dest))
 
     def test_src_subdir(self):
         """Link to a file in a subdir of a project."""
@@ -342,17 +330,13 @@ class LinkFile(CopyLinkTestCase):
         self.touch(src)
         lf = self.LinkFile("foo.txt", "sym")
         lf._Link()
-        self.assertEqual(
-            os.path.join("git-project", "foo.txt"), os.readlink(dest)
-        )
+        self.assertEqual(os.path.join("git-project", "foo.txt"), os.readlink(dest))
 
         # Point the symlink somewhere else.
         os.unlink(dest)
         platform_utils.symlink(self.tempdir, dest)
         lf._Link()
-        self.assertEqual(
-            os.path.join("git-project", "foo.txt"), os.readlink(dest)
-        )
+        self.assertEqual(os.path.join("git-project", "foo.txt"), os.readlink(dest))
 
 
 class MigrateWorkTreeTests(unittest.TestCase):
@@ -399,9 +383,7 @@ class MigrateWorkTreeTests(unittest.TestCase):
             dotgit = tempdir / "src/test/.git"
             dotgit.mkdir(parents=True)
             for name in cls._SYMLINKS:
-                (dotgit / name).symlink_to(
-                    f"../../../.repo/projects/src/test.git/{name}"
-                )
+                (dotgit / name).symlink_to(f"../../../.repo/projects/src/test.git/{name}")
             for name in cls._FILES | cls._CLEAN_FILES:
                 (dotgit / name).write_text(name)
 
@@ -432,9 +414,7 @@ class MigrateWorkTreeTests(unittest.TestCase):
         """A checkout with unknown files should abort."""
         with self._simple_layout() as tempdir:
             dotgit = tempdir / "src/test/.git"
-            (tempdir / ".repo/projects/src/test.git/random-file").write_text(
-                "one"
-            )
+            (tempdir / ".repo/projects/src/test.git/random-file").write_text("one")
             (dotgit / "random-file").write_text("two")
             with self.assertRaises(error.GitError):
                 project.Project._MigrateOldWorkTreeGitDir(str(dotgit))
@@ -460,9 +440,7 @@ class ManifestPropertiesFetchedCorrectly(unittest.TestCase):
         os.mkdir(manifest_dir)
         manifest = manifest_xml.XmlManifest(repodir, manifest_file)
 
-        return project.ManifestProject(
-            manifest, "test/manifest", os.path.join(tempdir, ".git"), tempdir
-        )
+        return project.ManifestProject(manifest, "test/manifest", os.path.join(tempdir, ".git"), tempdir)
 
     def test_manifest_config_properties(self):
         """Test we are fetching the manifest config properties correctly."""
@@ -472,19 +450,11 @@ class ManifestPropertiesFetchedCorrectly(unittest.TestCase):
 
             # Set property using the expected Set method, then ensure
             # the porperty functions are using the correct Get methods.
-            fakeproj.config.SetString(
-                "manifest.standalone", "https://chicken/manifest.git"
-            )
-            self.assertEqual(
-                fakeproj.standalone_manifest_url, "https://chicken/manifest.git"
-            )
+            fakeproj.config.SetString("manifest.standalone", "https://chicken/manifest.git")
+            self.assertEqual(fakeproj.standalone_manifest_url, "https://chicken/manifest.git")
 
-            fakeproj.config.SetString(
-                "manifest.groups", "test-group, admin-group"
-            )
-            self.assertEqual(
-                fakeproj.manifest_groups, "test-group, admin-group"
-            )
+            fakeproj.config.SetString("manifest.groups", "test-group, admin-group")
+            self.assertEqual(fakeproj.manifest_groups, "test-group, admin-group")
 
             fakeproj.config.SetString("repo.reference", "mirror/ref")
             self.assertEqual(fakeproj.reference, "mirror/ref")
@@ -525,12 +495,8 @@ class ManifestPropertiesFetchedCorrectly(unittest.TestCase):
             fakeproj.config.SetString("repo.clonefilter", "blob:limit=10M")
             self.assertEqual(fakeproj.clone_filter, "blob:limit=10M")
 
-            fakeproj.config.SetString(
-                "repo.partialcloneexclude", "third_party/big_repo"
-            )
-            self.assertEqual(
-                fakeproj.partial_clone_exclude, "third_party/big_repo"
-            )
+            fakeproj.config.SetString("repo.partialcloneexclude", "third_party/big_repo")
+            self.assertEqual(fakeproj.partial_clone_exclude, "third_party/big_repo")
 
             fakeproj.config.SetString("manifest.platform", "auto")
             self.assertEqual(fakeproj.manifest_platform, "auto")

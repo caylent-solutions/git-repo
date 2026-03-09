@@ -27,9 +27,7 @@ class _Coloring(Coloring):
 
 class Info(PagedCommand):
     COMMON = True
-    helpSummary = (
-        "Get info on the manifest branch, current branch or unmerged branches"
-    )
+    helpSummary = "Get info on the manifest branch, current branch or unmerged branches"
     helpUsage = "%prog [-dl] [-o [-c]] [<project>...]"
 
     def _Options(self, p):
@@ -213,9 +211,7 @@ class Info(PagedCommand):
 
     def _printCommitOverview(self, opt, args):
         all_branches = []
-        for project in self.GetProjects(
-            args, all_manifests=not opt.this_manifest_only
-        ):
+        for project in self.GetProjects(args, all_manifests=not opt.this_manifest_only):
             br = [project.GetUploadableBranch(x) for x in project.GetBranches()]
             br = [x for x in br if x]
             if self.opt.current_branch:

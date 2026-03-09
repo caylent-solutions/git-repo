@@ -167,9 +167,7 @@ class Progress:
                 return
 
         if self._total <= 0:
-            self._write(
-                "%s: %d,%s" % (self._title, self._done, CSI_ERASE_LINE_AFTER)
-            )
+            self._write("%s: %d,%s" % (self._title, self._done, CSI_ERASE_LINE_AFTER))
         else:
             p = (100 * self._done) / self._total
             if self._show_jobs:
@@ -222,10 +220,7 @@ class Progress:
 
         duration = duration_str(time.time() - self._start)
         if self._total <= 0:
-            self._write(
-                "%s: %d, done in %s%s\n"
-                % (self._title, self._done, duration, CSI_ERASE_LINE_AFTER)
-            )
+            self._write("%s: %d, done in %s%s\n" % (self._title, self._done, duration, CSI_ERASE_LINE_AFTER))
         else:
             p = (100 * self._done) / self._total
             self._write(
