@@ -2656,6 +2656,11 @@ class Project:
 
         if self.manifest.IsMirror and not current_branch_only:
             branch = None
+        elif version_constraints.is_version_constraint(self.revisionExpr):
+            # Version constraints (e.g. ~=1.0.0, >=1.0,<2.0, *) are not
+            # branch names.  Skip the branch refspec — the --tags fetch
+            # will bring in all tags needed for resolution in GetRevisionId.
+            branch = None
         else:
             branch = self.revisionExpr
         if not self.manifest.IsMirror and is_sha1 and depth:
