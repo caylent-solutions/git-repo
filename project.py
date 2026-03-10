@@ -3356,6 +3356,13 @@ class Project:
                 msg = "manifest set to %s" % self.revisionId
                 dst = self.revisionId + "^0"
                 active_git.UpdateRef(ref, dst, message=msg, detach=True)
+        elif version_constraints.is_version_constraint(self.revisionExpr):
+            # Version constraints (e.g. ~=1.0.0, *) are not valid ref names.
+            # Resolve to a concrete commit via GetRevisionId and detach.
+            revid = self.GetRevisionId(self.bare_ref.all)
+            if cur != "" or self.bare_ref.get(ref) != revid:
+                msg = "manifest set to %s" % self.revisionExpr
+                active_git.UpdateRef(ref, revid + "^0", message=msg, detach=True)
         else:
             remote = self.GetRemote()
             dst = remote.ToLocal(self.revisionExpr)
