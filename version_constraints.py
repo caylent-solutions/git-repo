@@ -97,7 +97,14 @@ def resolve_version_constraint(revision, available_tags):
             the constraint.
     """
     # Split revision into prefix and constraint at the last '/'.
-    prefix, constraint_str = revision.rsplit("/", 1)
+    # Bare constraints (e.g. "~=1.0.0", "*") have no prefix — match all tags.
+    if "/" in revision:
+        prefix, constraint_str = revision.rsplit("/", 1)
+        tag_prefix = prefix + "/"
+    else:
+        prefix = None
+        constraint_str = revision
+        tag_prefix = None
 
     # Build the specifier. Wildcard matches all versions.
     if constraint_str == "*":
@@ -111,12 +118,15 @@ def resolve_version_constraint(revision, available_tags):
             )
 
     # Filter tags by prefix and parse their version suffixes.
-    tag_prefix = prefix + "/"
     candidates = []
     for tag in available_tags:
-        if not tag.startswith(tag_prefix):
-            continue
-        version_str = tag[len(tag_prefix) :]
+        if tag_prefix is not None:
+            if not tag.startswith(tag_prefix):
+                continue
+            version_str = tag[len(tag_prefix):]
+        else:
+            # No prefix: extract last path component as version candidate.
+            version_str = tag.rsplit("/", 1)[-1]
         try:
             version = Version(version_str)
         except InvalidVersion:
@@ -125,9 +135,14 @@ def resolve_version_constraint(revision, available_tags):
             candidates.append((version, tag))
 
     if not candidates:
-        raise error.ManifestInvalidRevisionError(
-            f"no tags match constraint '{constraint_str}' under '{prefix}'"
-        )
+        if prefix is not None:
+            raise error.ManifestInvalidRevisionError(
+                f"no tags match constraint '{constraint_str}' under '{prefix}'"
+            )
+        else:
+            raise error.ManifestInvalidRevisionError(
+                f"no tags match constraint '{constraint_str}'"
+            )
 
     # Return the tag with the highest matching version.
     candidates.sort(key=lambda pair: pair[0])
