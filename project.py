@@ -1535,6 +1535,8 @@ class Project:
         # before the normal ref-lookup flow.
         if version_constraints.is_version_constraint(self.revisionExpr):
             if all_refs is None:
+                all_refs = self.bare_ref.all
+            if not all_refs:
                 raise ManifestInvalidRevisionError(
                     f"revision {self.revisionExpr} in {self.name} "
                     "not found: no refs available"
